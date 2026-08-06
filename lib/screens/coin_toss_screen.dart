@@ -5,6 +5,7 @@ import '../controllers/match_controller.dart';
 import '../models/match_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/coin_3d_widget.dart';
+import '../widgets/made_by_footer.dart';
 import 'match_confirmation_screen.dart';
 
 class CoinTossScreen extends StatefulWidget {
@@ -16,10 +17,10 @@ class CoinTossScreen extends StatefulWidget {
 
 class _CoinTossScreenState extends State<CoinTossScreen>
     with SingleTickerProviderStateMixin {
-  late ConfettiController _confettiController;
-  late AnimationController _resultAnimController;
-  late Animation<double> _scaleAnim;
-  late Animation<double> _fadeAnim;
+  ConfettiController? _confettiController;
+  AnimationController? _resultAnimController;
+  Animation<double>? _scaleAnim;
+  Animation<double>? _fadeAnim;
 
   String? _callingTeam;
   String _selectedCall = 'HEADS'; // "HEADS" or "TAILS"
@@ -33,20 +34,22 @@ class _CoinTossScreenState extends State<CoinTossScreen>
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 2));
 
-    _resultAnimController = AnimationController(
+    final animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
 
     _scaleAnim = Tween<double>(begin: 0.7, end: 1.0).animate(
       CurvedAnimation(
-          parent: _resultAnimController, curve: Curves.elasticOut),
+          parent: animCtrl, curve: Curves.elasticOut),
     );
 
     _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-          parent: _resultAnimController, curve: Curves.easeIn),
+          parent: animCtrl, curve: Curves.easeIn),
     );
+
+    _resultAnimController = animCtrl;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final match =
@@ -61,8 +64,8 @@ class _CoinTossScreenState extends State<CoinTossScreen>
 
   @override
   void dispose() {
-    _confettiController.dispose();
-    _resultAnimController.dispose();
+    _confettiController?.dispose();
+    _resultAnimController?.dispose();
     super.dispose();
   }
 
@@ -71,7 +74,7 @@ class _CoinTossScreenState extends State<CoinTossScreen>
     MatchModel? match = controller.currentMatch;
     if (match == null || _callingTeam == null) return;
 
-    _resultAnimController.reset();
+    _resultAnimController?.reset();
     setState(() {
       _coinResult = null;
       _tossWinner = null;
@@ -90,8 +93,8 @@ class _CoinTossScreenState extends State<CoinTossScreen>
       _tossWinner = winnerTeam;
     });
 
-    _resultAnimController.forward();
-    _confettiController.play();
+    _resultAnimController?.forward();
+    _confettiController?.play();
   }
 
   void _onProceedToConfirmation() {
@@ -285,11 +288,11 @@ class _CoinTossScreenState extends State<CoinTossScreen>
                   ],
 
                   // Reveal Result & Winner Glassmorphism Card
-                  if (_coinResult != null && !controller.isFlipping) ...[
+                  if (_coinResult != null && !controller.isFlipping && _fadeAnim != null && _scaleAnim != null) ...[
                     FadeTransition(
-                      opacity: _fadeAnim,
+                      opacity: _fadeAnim!,
                       child: ScaleTransition(
-                        scale: _scaleAnim,
+                        scale: _scaleAnim!,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(20),
@@ -397,15 +400,17 @@ class _CoinTossScreenState extends State<CoinTossScreen>
                           style: TextStyle(color: AppTheme.textMuted)),
                     ),
                   ],
+                  const MadeByFooter(),
                 ],
               ),
             ),
 
             // Top Confetti Celebration Overlay
-            Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _confettiController,
+            if (_confettiController != null)
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _confettiController!,
                 blastDirectionality: BlastDirectionality.explosive,
                 shouldLoop: false,
                 colors: const [

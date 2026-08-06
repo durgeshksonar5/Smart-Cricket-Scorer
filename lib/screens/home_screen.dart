@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../controllers/match_controller.dart';
 import '../models/match_model.dart';
 import '../theme/app_theme.dart';
+import '../widgets/made_by_footer.dart';
 import 'team_setup_screen.dart';
 import 'match_detail_screen.dart';
 
@@ -142,6 +143,7 @@ class HomeScreen extends StatelessWidget {
                             },
                           ),
               ),
+              const MadeByFooter(),
             ],
           ),
         ),

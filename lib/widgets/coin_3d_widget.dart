@@ -17,28 +17,26 @@ class Coin3DWidget extends StatefulWidget {
 
 class _Coin3DWidgetState extends State<Coin3DWidget>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _rotationAnim;
-  late Animation<double> _heightAnim;
+  AnimationController? _controller;
+  Animation<double>? _rotationAnim;
+  Animation<double>? _heightAnim;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    final controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2700),
     );
 
-    // 3D vertical spin deceleration curve
     _rotationAnim = Tween<double>(
       begin: 0,
       end: 16 * pi, // 8 complete 3D rotations
     ).animate(CurvedAnimation(
-      parent: _controller,
+      parent: controller,
       curve: Curves.decelerate,
     ));
 
-    // Parabolic arc sequence: Appears -> Ascends to -100px -> Drops down -> Bounces at end
     _heightAnim = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(begin: 0.0, end: -100.0)
@@ -60,32 +58,42 @@ class _Coin3DWidgetState extends State<Coin3DWidget>
             .chain(CurveTween(curve: Curves.bounceOut)),
         weight: 10.0,
       ),
-    ]).animate(_controller);
+    ]).animate(controller);
+
+    _controller = controller;
   }
 
   @override
   void didUpdateWidget(Coin3DWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isFlipping && !oldWidget.isFlipping) {
-      _controller.forward(from: 0.0);
+      _controller?.forward(from: 0.0);
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_controller == null || _rotationAnim == null || _heightAnim == null) {
+      return const SizedBox.shrink();
+    }
+
+    final controller = _controller!;
+    final rotationAnim = _rotationAnim!;
+    final heightAnim = _heightAnim!;
+
     return AnimatedBuilder(
-      animation: _controller,
+      animation: controller,
       builder: (context, child) {
-        double angle = _rotationAnim.value;
+        double angle = rotationAnim.value;
         double currentResultAngle = 0;
 
-        if (!_controller.isAnimating && widget.result != null) {
+        if (!controller.isAnimating && widget.result != null) {
           currentResultAngle = (widget.result == 'TAILS') ? pi : 0;
         }
 
@@ -96,7 +104,7 @@ class _Coin3DWidgetState extends State<Coin3DWidget>
           mainAxisSize: MainAxisSize.min,
           children: [
             Transform.translate(
-              offset: Offset(0, _heightAnim.value),
+              offset: Offset(0, heightAnim.value),
               child: Transform(
                 alignment: Alignment.center,
                 transform: Matrix4.identity()
@@ -119,8 +127,8 @@ class _Coin3DWidgetState extends State<Coin3DWidget>
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFFFFD700).withValues(alpha: 0.45),
-                        blurRadius: _controller.isAnimating ? 35 : 18,
-                        spreadRadius: _controller.isAnimating ? 6 : 2,
+                        blurRadius: controller.isAnimating ? 35 : 18,
+                        spreadRadius: controller.isAnimating ? 6 : 2,
                       ),
                     ],
                     border: Border.all(color: const Color(0xFFFFFDE7), width: 6),
@@ -157,13 +165,13 @@ class _Coin3DWidgetState extends State<Coin3DWidget>
             // Dynamic shadow under the coin
             AnimatedContainer(
               duration: const Duration(milliseconds: 50),
-              width: (110 + (_heightAnim.value * 0.4)).clamp(30.0, 140.0),
+              width: (110 + (heightAnim.value * 0.4)).clamp(30.0, 140.0),
               height: 12,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(50),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: (_controller.isAnimating ? 0.3 : 0.6)),
+                    color: Colors.black.withValues(alpha: (controller.isAnimating ? 0.3 : 0.6)),
                     blurRadius: 12,
                     spreadRadius: 2,
                   ),

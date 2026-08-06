@@ -27,6 +27,7 @@ class MatchModel {
   List<String> inn2BallHistory;
 
   bool isCompleted;
+  bool isFreeHit;
   String? winnerTeam;
   String? winMargin;
 
@@ -52,6 +53,7 @@ class MatchModel {
     this.inn2Balls = 0,
     List<String>? inn2BallHistory,
     this.isCompleted = false,
+    this.isFreeHit = false,
     this.winnerTeam,
     this.winMargin,
   })  : inn1BallHistory = inn1BallHistory ?? [],
@@ -100,6 +102,7 @@ class MatchModel {
       'inn2Balls': inn2Balls,
       'inn2BallHistory': inn2BallHistory,
       'isCompleted': isCompleted,
+      'isFreeHit': isFreeHit,
       'winnerTeam': winnerTeam,
       'winMargin': winMargin,
     };
@@ -132,6 +135,7 @@ class MatchModel {
       inn2Balls: json['inn2Balls'] ?? 0,
       inn2BallHistory: List<String>.from(json['inn2BallHistory'] ?? []),
       isCompleted: json['isCompleted'] ?? false,
+      isFreeHit: json['isFreeHit'] ?? false,
       winnerTeam: json['winnerTeam'],
       winMargin: json['winMargin'],
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/match_controller.dart';
 import '../theme/app_theme.dart';
+import '../widgets/made_by_footer.dart';
 import 'coin_toss_screen.dart';
 
 class TeamSetupScreen extends StatefulWidget {
@@ -322,6 +323,8 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                     label: const Text('PROCEED TO COIN TOSS'),
                   ),
                 ),
+                const SizedBox(height: 12),
+                const MadeByFooter(),
               ],
             ),
           ),

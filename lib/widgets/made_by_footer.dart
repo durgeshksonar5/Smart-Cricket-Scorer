@@ -1,0 +1,56 @@
+import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+
+class MadeByFooter extends StatelessWidget {
+  final EdgeInsetsGeometry padding;
+
+  const MadeByFooter({
+    super.key,
+    this.padding = const EdgeInsets.symmetric(vertical: 8),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding,
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Made with ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textMuted.withValues(alpha: 0.8),
+                letterSpacing: 0.5,
+              ),
+            ),
+            const Text(
+              '❤️',
+              style: TextStyle(fontSize: 11),
+            ),
+            Text(
+              ' by ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textMuted.withValues(alpha: 0.8),
+                letterSpacing: 0.5,
+              ),
+            ),
+            const Text(
+              'Durgesh Sonar',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.coinGold,
+                letterSpacing: 0.6,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

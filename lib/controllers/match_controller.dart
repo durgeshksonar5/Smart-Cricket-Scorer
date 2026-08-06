@@ -66,7 +66,6 @@ class MatchController extends ChangeNotifier {
     _isFlipping = true;
     notifyListeners();
 
-    // 2.8s flip simulation animation sequence
     await Future.delayed(const Duration(milliseconds: 2800));
 
     _lastFlipResult = _tossService.flipCoin();
@@ -160,6 +159,16 @@ class MatchController extends ChangeNotifier {
       }
     }
 
+    // Free Hit state management:
+    // If No Ball -> Next ball is Free Hit!
+    // If legal ball bowled on Free Hit -> Free Hit ends.
+    // If Wide or No Ball on Free Hit -> Free Hit STAYS active!
+    if (extraType == 'NB') {
+      match.isFreeHit = true;
+    } else if (isLegalBall) {
+      match.isFreeHit = false;
+    }
+
     notifyListeners();
   }
 
@@ -175,6 +184,7 @@ class MatchController extends ChangeNotifier {
   void startSecondInnings() {
     if (_currentMatch == null) return;
     _currentMatch!.currentInnings = 2;
+    _currentMatch!.isFreeHit = false;
     String temp = _currentMatch!.battingTeam;
     _currentMatch!.battingTeam = _currentMatch!.bowlingTeam;
     _currentMatch!.bowlingTeam = temp;
@@ -255,6 +265,13 @@ class MatchController extends ChangeNotifier {
         match.inn2Runs = (match.inn2Runs - runs).clamp(0, 9999);
         match.inn2Balls = (match.inn2Balls - 1).clamp(0, 999);
       }
+    }
+
+    // Re-evaluate Free Hit status after undo
+    if (history.isNotEmpty && history.last.contains('NB')) {
+      match.isFreeHit = true;
+    } else {
+      match.isFreeHit = false;
     }
 
     notifyListeners();

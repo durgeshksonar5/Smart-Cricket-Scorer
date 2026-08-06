@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../controllers/match_controller.dart';
 import '../models/match_model.dart';
 import '../theme/app_theme.dart';
+import '../widgets/made_by_footer.dart';
 import 'home_screen.dart';
 import 'team_setup_screen.dart';
 
@@ -180,6 +181,8 @@ class MatchSummaryScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              const MadeByFooter(),
             ],
           ),
         ),
