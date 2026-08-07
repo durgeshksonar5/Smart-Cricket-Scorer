@@ -1,4 +1,5 @@
 import 'toss_details.dart';
+import 'over_model.dart';
 
 class MatchModel {
   final String id;
@@ -20,14 +21,21 @@ class MatchModel {
   int inn1Wickets;
   int inn1Balls;
   List<String> inn1BallHistory;
+  List<OverModel> inn1Overs;
 
   int inn2Runs;
   int inn2Wickets;
   int inn2Balls;
   List<String> inn2BallHistory;
+  List<OverModel> inn2Overs;
+
+  String currentStriker;
+  String currentNonStriker;
+  String currentBowler;
 
   bool isCompleted;
   bool isFreeHit;
+  bool isOverCompleteWaiting;
   String? winnerTeam;
   String? winMargin;
 
@@ -48,16 +56,24 @@ class MatchModel {
     this.inn1Wickets = 0,
     this.inn1Balls = 0,
     List<String>? inn1BallHistory,
+    List<OverModel>? inn1Overs,
     this.inn2Runs = 0,
     this.inn2Wickets = 0,
     this.inn2Balls = 0,
     List<String>? inn2BallHistory,
+    List<OverModel>? inn2Overs,
+    this.currentStriker = 'Batsman 1',
+    this.currentNonStriker = 'Batsman 2',
+    this.currentBowler = 'Bowler 1',
     this.isCompleted = false,
     this.isFreeHit = false,
+    this.isOverCompleteWaiting = false,
     this.winnerTeam,
     this.winMargin,
   })  : inn1BallHistory = inn1BallHistory ?? [],
-        inn2BallHistory = inn2BallHistory ?? [];
+        inn1Overs = inn1Overs ?? [],
+        inn2BallHistory = inn2BallHistory ?? [],
+        inn2Overs = inn2Overs ?? [];
 
   int get maxBalls => totalOvers * 6;
 
@@ -66,6 +82,12 @@ class MatchModel {
   int get currentBalls => currentInnings == 1 ? inn1Balls : inn2Balls;
   List<String> get currentBallHistory =>
       currentInnings == 1 ? inn1BallHistory : inn2BallHistory;
+
+  List<OverModel> get currentOvers =>
+      currentInnings == 1 ? inn1Overs : inn2Overs;
+
+  OverModel? get currentOver =>
+      currentOvers.isNotEmpty ? currentOvers.last : null;
 
   String get currentOversFormatted {
     int overs = currentBalls ~/ 6;
@@ -97,12 +119,18 @@ class MatchModel {
       'inn1Wickets': inn1Wickets,
       'inn1Balls': inn1Balls,
       'inn1BallHistory': inn1BallHistory,
+      'inn1Overs': inn1Overs.map((o) => o.toJson()).toList(),
       'inn2Runs': inn2Runs,
       'inn2Wickets': inn2Wickets,
       'inn2Balls': inn2Balls,
       'inn2BallHistory': inn2BallHistory,
+      'inn2Overs': inn2Overs.map((o) => o.toJson()).toList(),
+      'currentStriker': currentStriker,
+      'currentNonStriker': currentNonStriker,
+      'currentBowler': currentBowler,
       'isCompleted': isCompleted,
       'isFreeHit': isFreeHit,
+      'isOverCompleteWaiting': isOverCompleteWaiting,
       'winnerTeam': winnerTeam,
       'winMargin': winMargin,
     };
@@ -130,14 +158,27 @@ class MatchModel {
       inn1Wickets: json['inn1Wickets'] ?? 0,
       inn1Balls: json['inn1Balls'] ?? 0,
       inn1BallHistory: List<String>.from(json['inn1BallHistory'] ?? []),
+      inn1Overs: (json['inn1Overs'] as List<dynamic>?)
+              ?.map((o) => OverModel.fromJson(Map<String, dynamic>.from(o)))
+              .toList() ??
+          [],
       inn2Runs: json['inn2Runs'] ?? 0,
       inn2Wickets: json['inn2Wickets'] ?? 0,
       inn2Balls: json['inn2Balls'] ?? 0,
       inn2BallHistory: List<String>.from(json['inn2BallHistory'] ?? []),
+      inn2Overs: (json['inn2Overs'] as List<dynamic>?)
+              ?.map((o) => OverModel.fromJson(Map<String, dynamic>.from(o)))
+              .toList() ??
+          [],
+      currentStriker: json['currentStriker'] ?? 'Batsman 1',
+      currentNonStriker: json['currentNonStriker'] ?? 'Batsman 2',
+      currentBowler: json['currentBowler'] ?? 'Bowler 1',
       isCompleted: json['isCompleted'] ?? false,
       isFreeHit: json['isFreeHit'] ?? false,
+      isOverCompleteWaiting: json['isOverCompleteWaiting'] ?? false,
       winnerTeam: json['winnerTeam'],
       winMargin: json['winMargin'],
     );
   }
 }
+
