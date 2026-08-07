@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'app_logo.dart';
 
 class AppFooter extends StatelessWidget {
   final EdgeInsetsGeometry padding;
@@ -17,6 +18,8 @@ class AppFooter extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const AppLogo(size: 18, showText: false),
+            const SizedBox(width: 8),
             Text(
               'Made with ',
               style: TextStyle(

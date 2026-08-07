@@ -6,6 +6,7 @@ import '../controllers/match_controller.dart';
 import '../models/match_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/made_by_footer.dart';
+import '../widgets/app_logo.dart';
 import 'team_setup_screen.dart';
 import 'coin_toss_screen.dart';
 import 'scorecard_screen.dart';
@@ -73,14 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.sports_cricket, color: AppTheme.primaryEmerald),
-            SizedBox(width: 8),
-            Text('Cricket Score Counter'),
-          ],
-        ),
+        title: const AppLogo(size: 28, showText: true),
       ),
       body: SafeArea(
         child: Padding(
@@ -279,14 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: AppTheme.primaryEmerald,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.sports_cricket, color: Colors.black, size: 26),
-              ),
+              const AppLogo(size: 42, showText: false),
               const SizedBox(width: 12),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
