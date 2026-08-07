@@ -1,0 +1,929 @@
+/* ==========================================================================
+   CRICKET SCORE COUNTER - PREMIUM LANDING PAGE STYLESHEET
+   Matching Flutter AppTheme: #0A1612 (Dark BG), #132620 (Card), #00E676 (Emerald), #FFD700 (Gold)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --bg-dark: #0A1612;
+  --card-bg: #132620;
+  --card-light: #1B332B;
+  --card-border: #24473C;
+  --primary-emerald: #00E676;
+  --primary-glow: rgba(0, 230, 118, 0.35);
+  --coin-gold: #FFD700;
+  --gold-glow: rgba(255, 215, 0, 0.3);
+  --accent-amber: #FF9100;
+  --danger-red: #FF5252;
+  --text-light: #E8F5E9;
+  --text-muted: #A1B5AC;
+  --font-main: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 50px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base reset & typography */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-emerald);
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Glassmorphism utility */
+.glass-card {
+  background: rgba(19, 38, 32, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Navigation Bar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 16px 0;
+  transition: var(--transition);
+  background: rgba(10, 22, 18, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(36, 71, 60, 0.4);
+}
+
+.navbar .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.nav-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--card-light), var(--card-bg));
+  padding: 4px;
+  border: 1.5px solid var(--primary-emerald);
+  box-shadow: 0 0 12px var(--primary-glow);
+}
+
+.nav-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.nav-title span {
+  color: var(--primary-emerald);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.nav-links a:hover {
+  color: var(--primary-emerald);
+}
+
+.btn-nav-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-emerald);
+  color: #000000 !important;
+  font-weight: 700 !important;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 4px 14px var(--primary-glow);
+  transition: var(--transition);
+}
+
+.btn-nav-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--primary-glow);
+}
+
+/* Mobile Nav Toggle */
+.mobile-nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* Hero Section */
+.hero {
+  position: relative;
+  padding: 160px 0 100px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 20%, rgba(0, 230, 118, 0.12) 0%, transparent 60%);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(0, 230, 118, 0.12);
+  border: 1px solid rgba(0, 230, 118, 0.4);
+  border-radius: var(--radius-pill);
+  color: var(--primary-emerald);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: 0.5px;
+}
+
+.hero-title {
+  font-size: 3.2rem;
+  font-weight: 900;
+  line-height: 1.15;
+  color: #ffffff;
+  margin-bottom: 20px;
+}
+
+.hero-title span {
+  background: linear-gradient(135deg, var(--primary-emerald), var(--coin-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+  max-width: 520px;
+}
+
+/* Primary Download Button */
+.btn-download-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: linear-gradient(135deg, var(--primary-emerald), #00b359);
+  color: #051a10;
+  font-size: 1.15rem;
+  font-weight: 800;
+  padding: 18px 36px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  box-shadow: 0 10px 30px var(--primary-glow);
+  transition: var(--transition);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-download-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(0, 230, 118, 0.5);
+  color: #000000;
+}
+
+.btn-download-primary .btn-icon {
+  font-size: 1.4rem;
+}
+
+.download-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.download-meta i {
+  color: var(--primary-emerald);
+}
+
+/* Phone Mockup Frame */
+.hero-visual {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.phone-mockup {
+  position: relative;
+  width: 320px;
+  height: 640px;
+  background: #000000;
+  border-radius: 44px;
+  border: 10px solid #1c2b25;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px var(--primary-glow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 24px;
+  background: #1c2b25;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  z-index: 10;
+}
+
+.phone-screen {
+  flex: 1;
+  background: var(--bg-dark);
+  padding: 36px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+/* Phone App Card Elements */
+.app-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.app-card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary-emerald);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.app-score-big {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-align: center;
+}
+
+.app-score-overs {
+  font-size: 0.9rem;
+  color: var(--coin-gold);
+  font-weight: 700;
+}
+
+.app-batter-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  padding: 4px 0;
+}
+
+.app-keypad {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.app-key-btn {
+  background: var(--card-light);
+  border: 1px solid var(--card-border);
+  color: white;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 8px 0;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.app-key-btn.boundary {
+  background: var(--primary-emerald);
+  color: black;
+}
+
+.app-key-btn.six {
+  background: #D500F9;
+  color: black;
+}
+
+.app-wicket-btn {
+  background: var(--danger-red);
+  color: white;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 8px;
+  border-radius: 6px;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* Section Header */
+.section-header {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 60px;
+}
+
+.section-tag {
+  display: inline-block;
+  color: var(--primary-emerald);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 2.3rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+/* Features Section */
+.features-section {
+  padding: 100px 0;
+  background: rgba(19, 38, 32, 0.3);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 28px;
+}
+
+.feature-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--primary-emerald);
+  box-shadow: 0 12px 30px var(--primary-glow);
+}
+
+.feature-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: var(--card-light);
+  border: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+  color: var(--primary-emerald);
+}
+
+.feature-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.feature-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+.feature-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  background: var(--card-light);
+  color: var(--primary-emerald);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--card-border);
+}
+
+/* Live Score Counter Preview Section */
+.preview-section {
+  padding: 100px 0;
+}
+
+.preview-card {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--card-bg);
+  border: 2px solid var(--primary-emerald);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 30px var(--primary-glow);
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.preview-team {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary-emerald);
+}
+
+.preview-overs-badge {
+  background: var(--card-light);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.preview-score-center {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.preview-main-score {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.preview-main-score span {
+  font-size: 1.6rem;
+  color: var(--coin-gold);
+}
+
+.preview-recent-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.preview-recent-title {
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.ball-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+}
+
+.ball-badge.normal { background: var(--card-light); color: white; border: 1px solid var(--card-border); }
+.ball-badge.four { background: var(--primary-emerald); color: black; }
+.ball-badge.six { background: #D500F9; color: black; }
+.ball-badge.wicket { background: var(--danger-red); color: white; }
+
+.preview-players-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.player-box {
+  background: var(--card-light);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+}
+
+.player-role {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.player-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.player-stat {
+  font-size: 1rem;
+  color: var(--coin-gold);
+  font-weight: 700;
+}
+
+/* Coin Toss Interactive Section */
+.toss-section {
+  padding: 100px 0;
+  background: rgba(19, 38, 32, 0.4);
+}
+
+.toss-card {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 44px 32px;
+}
+
+.coin-container {
+  perspective: 1000px;
+  width: 140px;
+  height: 140px;
+  margin: 30px auto;
+  cursor: pointer;
+}
+
+.coin {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.coin.flipping {
+  animation: flipCoin 1.5s forwards;
+}
+
+@keyframes flipCoin {
+  0% { transform: rotateY(0); }
+  50% { transform: rotateY(1080deg) scale(1.2); }
+  100% { transform: rotateY(2160deg); }
+}
+
+.coin-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  border: 6px solid var(--coin-gold);
+  box-shadow: 0 0 25px var(--gold-glow);
+}
+
+.coin-heads {
+  background: linear-gradient(135deg, #FFD700, #FFA000);
+  color: #3e2723;
+}
+
+.coin-tails {
+  background: linear-gradient(135deg, #FFC107, #FF8F00);
+  color: #3e2723;
+  transform: rotateY(180deg);
+}
+
+.btn-flip {
+  background: linear-gradient(135deg, var(--coin-gold), var(--accent-amber));
+  color: #000000;
+  font-size: 1.1rem;
+  font-weight: 800;
+  padding: 14px 32px;
+  border-radius: var(--radius-pill);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 20px var(--gold-glow);
+  transition: var(--transition);
+}
+
+.btn-flip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px var(--gold-glow);
+}
+
+.toss-result {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--primary-emerald);
+  min-height: 36px;
+}
+
+/* Match Recovery Section */
+.recovery-section {
+  padding: 100px 0;
+}
+
+.recovery-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  background: linear-gradient(135deg, var(--card-bg), var(--card-light));
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 50px;
+}
+
+.recovery-icon {
+  font-size: 4rem;
+  color: var(--accent-amber);
+  margin-bottom: 20px;
+}
+
+/* How It Works Steps */
+.steps-section {
+  padding: 100px 0;
+  background: rgba(19, 38, 32, 0.2);
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.step-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 36px 24px;
+  text-align: center;
+  position: relative;
+}
+
+.step-number {
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: var(--primary-emerald);
+  opacity: 0.3;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.step-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.step-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+/* Final Call To Action */
+.final-cta {
+  padding: 100px 0;
+  text-align: center;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 230, 118, 0.15) 0%, transparent 70%);
+}
+
+.final-cta-card {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 60px 40px;
+  background: var(--card-bg);
+  border: 2px solid var(--primary-emerald);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px var(--primary-glow);
+}
+
+.final-cta-title {
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.final-cta-desc {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+}
+
+/* Toast Notification */
+.toast-notification {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: var(--card-bg);
+  border: 2px solid var(--primary-emerald);
+  border-radius: var(--radius-md);
+  padding: 16px 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 2000;
+  transform: translateY(120px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+}
+
+.toast-notification.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast-icon {
+  font-size: 1.8rem;
+}
+
+.toast-title {
+  font-weight: 800;
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+.toast-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Footer */
+.footer {
+  background: #060e0c;
+  border-top: 1px solid var(--card-border);
+  padding: 40px 0 24px;
+  text-align: center;
+}
+
+.footer-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.footer-credits {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.footer-credits strong {
+  color: var(--coin-gold);
+}
+
+.footer-copy {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 16px;
+  opacity: 0.6;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 992px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 50px;
+  }
+
+  .hero-content {
+    align-items: center;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .recovery-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  
+  .mobile-nav-toggle {
+    display: block;
+  }
+
+  .preview-players-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-title {
+    font-size: 1.8rem;
+  }
+
+  .hero-title {
+    font-size: 2.1rem;
+  }
+
+  .btn-download-primary {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 1.05rem;
+  }
+}

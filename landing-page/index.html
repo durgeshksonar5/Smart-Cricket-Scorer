@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cricket Score App – Ball-by-Ball Cricket Scoring</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Track cricket runs, wickets, overs, batters, bowlers and ball-by-ball scores with our professional cricket scoring app." />
+  <meta name="keywords" content="cricket score app, cricket scorer, cricket scoring app, ball by ball cricket score, cricket runs counter, cricket scorecard" />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="Durgesh Sonar" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Cricket Score App – Professional Cricket Scoring" />
+  <meta property="og:description" content="Track every run, every ball, every wicket and every over with ease. Download the free Android APK now." />
+  <meta property="og:image" content="assets/logo/ic_launcher.png" />
+  <meta property="og:url" content="./" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Cricket Score App – Ball-by-Ball Cricket Scoring" />
+  <meta name="twitter:description" content="Track cricket runs, wickets, overs, batters and bowlers with our professional cricket scoring app." />
+  <meta name="twitter:image" content="assets/logo/ic_launcher.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/logo/ic_launcher.png" />
+
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="#" class="nav-brand">
+        <img src="assets/logo/ic_launcher.png" alt="Cricket Score App Logo" class="nav-logo" />
+        <span class="nav-title">Cricket <span>Scorer</span></span>
+      </a>
+
+      <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation Menu">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#preview">Live Preview</a></li>
+        <li><a href="#cointoss">Coin Toss</a></li>
+        <li><a href="#recovery">Match Recovery</a></li>
+        <li><a href="#howitworks">How It Works</a></li>
+        <li>
+          <a href="apk/app-release.apk" class="btn-nav-download btn-download-apk" download>
+            <i class="fab fa-android"></i> Download APK
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="badge-pill">
+            <i class="fas fa-baseball-ball"></i> OFFICIAL RELEASE v1.0.1
+          </div>
+          <h1 class="hero-title">
+            Professional <span>Cricket Scoring</span> Made Simple
+          </h1>
+          <p class="hero-subtitle">
+            Track every run, every ball, every wicket and every over with ease. Designed for modern cricket enthusiasts and local tournaments.
+          </p>
+
+          <a href="apk/app-release.apk" class="btn-download-primary btn-download-apk" download>
+            <i class="fab fa-android btn-icon"></i>
+            <span>DOWNLOAD APK</span>
+          </a>
+
+          <div class="download-meta">
+            <span><i class="fas fa-check-circle"></i> Android App</span>
+            <span>•</span>
+            <span><i class="fas fa-shield-alt"></i> Safe & Virus Free</span>
+            <span>•</span>
+            <span><i class="fas fa-download"></i> Free Download</span>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="app-card" style="border-color: #00E676;">
+                <div class="app-card-title">
+                  <span>INDIA</span>
+                  <span style="color: #A1B5AC;">Inn 1 • Overs 20</span>
+                </div>
+                <div class="app-score-big">0/0</div>
+                <div class="app-score-overs" style="text-align: center;">(0.0 Ov)</div>
+              </div>
+
+              <div class="app-card">
+                <div class="app-batter-row" style="color: #00E676; font-weight: 800;">
+                  <span>★ India Player 1</span>
+                  <span>0 (0)</span>
+                </div>
+                <div class="app-batter-row" style="color: #ffffff;">
+                  <span>   India Player 2</span>
+                  <span>0 (0)</span>
+                </div>
+              </div>
+
+              <div class="app-card">
+                <div class="app-batter-row" style="color: #FFD700; font-weight: 800;">
+                  <span>⚽ Australia Player 11</span>
+                  <span>0.0 Ov • 0 R • 0 W</span>
+                </div>
+              </div>
+
+              <div class="app-card" style="padding: 8px;">
+                <span style="font-size: 0.7rem; color: #A1B5AC; font-weight: 700;">Recent: No balls bowled yet</span>
+              </div>
+
+              <div class="app-card">
+                <div style="font-size: 0.65rem; color: #00E676; font-weight: 900; margin-bottom: 4px;">SCORING CONTROLS</div>
+                <div class="app-keypad">
+                  <div class="app-key-btn">0</div>
+                  <div class="app-key-btn">1</div>
+                  <div class="app-key-btn">2</div>
+                  <div class="app-key-btn">3</div>
+                  <div class="app-key-btn boundary">4</div>
+                  <div class="app-key-btn six">6</div>
+                </div>
+                <div style="display: flex; gap: 4px; margin-top: 4px;">
+                  <div class="app-key-btn" style="flex: 1; color: #FFD700;">WD</div>
+                  <div class="app-key-btn" style="flex: 1; color: #FFD700;">NB</div>
+                </div>
+                <div class="app-wicket-btn">OUT / WICKET ☝️</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App Features Section -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">POWERFUL FEATURES</span>
+        <h2 class="section-title">Everything You Need To Score Matches Professionally</h2>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-stopwatch"></i></div>
+          <h3 class="feature-title">🏏 Live Score Counter</h3>
+          <p class="feature-desc">Track team runs, total wickets, overs, and target run-rates in real time with high visual clarity.</p>
+          <div class="feature-chips">
+            <span class="chip">Real-time</span>
+            <span class="chip">Target RR</span>
+          </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-baseball-ball"></i></div>
+          <h3 class="feature-title">🎯 Ball-by-Ball Scoring</h3>
+          <p class="feature-desc">Record every single delivery with complete accuracy and review ball details or edit results seamlessly.</p>
+          <div class="feature-chips">
+            <span class="chip">Delivery Timeline</span>
+            <span class="chip">Undo Option</span>
+          </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-calculator"></i></div>
+          <h3 class="feature-title">🔢 Runs & Boundaries</h3>
+          <p class="feature-desc">Instant single-tap keypad for recording 0, 1, 2, 3 runs and glowing boundary highlights for 4s and 6s.</p>
+          <div class="feature-chips">
+            <span class="chip">Boundaries</span>
+            <span class="chip">1-Tap Keypad</span>
+          </div>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-exclamation-triangle"></i></div>
+          <h3 class="feature-title">⚡ Wide & No Ball</h3>
+          <p class="feature-desc">Automated handling of extras, penalty runs, legal deliveries count, and Free Hit rules enforcement.</p>
+          <div class="feature-chips">
+            <span class="chip">Wide (WD)</span>
+            <span class="chip">No Ball (NB)</span>
+            <span class="chip">Free Hit</span>
+          </div>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-user-ninja"></i></div>
+          <h3 class="feature-title">👤 Batter Statistics</h3>
+          <p class="feature-desc">Comprehensive individual stats calculation including total runs, balls faced, 4s, 6s, and Strike Rate (SR).</p>
+          <div class="feature-chips">
+            <span class="chip">Strike Rate</span>
+            <span class="chip">Boundary Count</span>
+          </div>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-bowling-ball"></i></div>
+          <h3 class="feature-title">🎯 Bowler Statistics</h3>
+          <p class="feature-desc">Detailed spell breakdown tracking completed overs, maidens, runs conceded, wickets taken, and economy rate (ECO).</p>
+          <div class="feature-chips">
+            <span class="chip">Maidens</span>
+            <span class="chip">Economy Rate</span>
+          </div>
+        </div>
+
+        <!-- Feature 7 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-coins"></i></div>
+          <h3 class="feature-title">🪙 Realistic Coin Toss</h3>
+          <p class="feature-desc">Interactive 3D animated coin flip simulation for Heads or Tails with automated toss decision setup.</p>
+          <div class="feature-chips">
+            <span class="chip">3D Animation</span>
+            <span class="chip">Bat / Bowl</span>
+          </div>
+        </div>
+
+        <!-- Feature 8 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-list-alt"></i></div>
+          <h3 class="feature-title">📊 Complete Scorecard</h3>
+          <p class="feature-desc">Full match tabbed view covering Batting Scorecard, Bowling Scorecard, Over History, and Delivery Breakdown.</p>
+          <div class="feature-chips">
+            <span class="chip">Full Summary</span>
+            <span class="chip">Tabbed View</span>
+          </div>
+        </div>
+
+        <!-- Feature 9 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-save"></i></div>
+          <h3 class="feature-title">💾 Auto Match Recovery</h3>
+          <p class="feature-desc">Automatic persistent state storage ensures live ongoing matches can be resumed seamlessly if closed.</p>
+          <div class="feature-chips">
+            <span class="chip">Persistent Storage</span>
+            <span class="chip">Auto-Resume</span>
+          </div>
+        </div>
+
+        <!-- Feature 10 -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-user-lock"></i></div>
+          <h3 class="feature-title">⏱️ 2-Hour Editing Window</h3>
+          <p class="feature-desc">Completed matches remain editable for 2 hours for score corrections and lock automatically into read-only mode.</p>
+          <div class="feature-chips">
+            <span class="chip">2-Hour Window</span>
+            <span class="chip">Tamper Proof</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Score Counter Preview Section -->
+  <section class="preview-section" id="preview">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">LIVE INTERFACE PREVIEW</span>
+        <h2 class="section-title">Clean & High-Contrast Match Dashboard</h2>
+      </div>
+
+      <div class="preview-card">
+        <div class="preview-header">
+          <span class="preview-team"><i class="fas fa-shield-alt"></i> INDIA BATTING</span>
+          <span class="preview-overs-badge">1st Innings • 20 Overs Match</span>
+        </div>
+
+        <div class="preview-score-center">
+          <div class="preview-main-score">145 / 3 <span>(17.4 Ov)</span></div>
+        </div>
+
+        <div class="preview-recent-row">
+          <span class="preview-recent-title">Recent Balls:</span>
+          <div class="ball-badge normal">1</div>
+          <div class="ball-badge four">4</div>
+          <div class="ball-badge normal">0</div>
+          <div class="ball-badge wicket">W</div>
+          <div class="ball-badge normal">2</div>
+          <div class="ball-badge six">6</div>
+        </div>
+
+        <div class="preview-players-grid">
+          <div class="player-box">
+            <div class="player-role">STRIKER BATTER</div>
+            <div class="player-name">★ Virat Kohli</div>
+            <div class="player-stat">82 Runs off 49 Balls (SR 167.3)</div>
+          </div>
+          <div class="player-box">
+            <div class="player-role">CURRENT BOWLER</div>
+            <div class="player-name">⚽ Jasprit Bumrah</div>
+            <div class="player-stat">3.4 Ov • 0 M • 27 R • 2 W (ECO 7.36)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Coin Toss Section -->
+  <section class="toss-section" id="cointoss">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">INTERACTIVE FEATURE</span>
+        <h2 class="section-title">Realistic 3D Coin Toss Simulation</h2>
+      </div>
+
+      <div class="toss-card">
+        <p style="color: var(--text-muted); font-size: 1rem;">
+          Tap the button below to simulate the official pre-match coin flip!
+        </p>
+
+        <div class="coin-container">
+          <div class="coin" id="interactiveCoin">
+            <div class="coin-face coin-heads">HEADS</div>
+            <div class="coin-face coin-tails">TAILS</div>
+          </div>
+        </div>
+
+        <button class="btn-flip" id="flipCoinBtn">
+          <i class="fas fa-sync-alt"></i> FLIP COIN NOW
+        </button>
+
+        <div class="toss-result" id="tossResultText">
+          Ready to toss! Tap 'FLIP COIN NOW' to spin.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Match Recovery Section -->
+  <section class="recovery-section" id="recovery">
+    <div class="container">
+      <div class="recovery-card">
+        <div>
+          <div class="recovery-icon"><i class="fas fa-shield-virus"></i></div>
+          <h2 style="font-size: 2.2rem; font-weight: 900; color: #ffffff; margin-bottom: 16px;">
+            YOUR MATCH IS ALWAYS SAFE
+          </h2>
+          <p style="color: var(--text-muted); font-size: 1.05rem; margin-bottom: 24px;">
+            Accidentally closed the app or low battery? Don't worry. Your live match data is continuously saved locally and can be resumed immediately upon reopening the app.
+          </p>
+          <a href="apk/app-release.apk" class="btn-download-primary btn-download-apk" download>
+            <i class="fab fa-android"></i> GET THE APP NOW
+          </a>
+        </div>
+        <div style="text-align: center;">
+          <img src="assets/logo/ic_launcher.png" alt="Cricket Scorer Icon" style="width: 180px; height: 180px; filter: drop-shadow(0 0 25px var(--primary-glow));" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="steps-section" id="howitworks">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">EASY INSTALLATION</span>
+        <h2 class="section-title">Start Scoring Matches In 3 Easy Steps</h2>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">01</div>
+          <h3 class="step-title">Download APK</h3>
+          <p class="step-desc">Click the Download button to fetch the latest official Android APK package directly to your phone.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">02</div>
+          <h3 class="step-title">Install App</h3>
+          <p class="step-desc">Open the downloaded file and tap Install. Enable "Install from unknown sources" if prompted.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">03</div>
+          <h3 class="step-title">Start Scoring</h3>
+          <p class="step-desc">Launch the app, set up teams, flip the coin, and score every delivery like a pro!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final Call to Action -->
+  <section class="final-cta">
+    <div class="container">
+      <div class="final-cta-card">
+        <h2 class="final-cta-title">READY TO SCORE YOUR NEXT MATCH?</h2>
+        <p class="final-cta-desc">
+          Download the Cricket Score Counter App and start tracking runs, wickets, overs, and statistics effortless!
+        </p>
+
+        <a href="apk/app-release.apk" class="btn-download-primary btn-download-apk" download>
+          <i class="fab fa-android btn-icon"></i>
+          <span>DOWNLOAD APK</span>
+        </a>
+        <div class="download-meta" style="justify-content: center; margin-top: 16px;">
+          <span>Android APK • Version 1.0.1 • 100% Free</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download Toast Notification -->
+  <div class="toast-notification" id="downloadToast">
+    <div class="toast-icon">⬇️</div>
+    <div>
+      <div class="toast-title">Download Started!</div>
+      <div class="toast-desc">Your APK download has started. Please check your browser downloads.</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <img src="assets/logo/ic_launcher.png" alt="Logo" style="width: 28px; height: 28px;" />
+          Cricket Score App
+        </div>
+        <p class="footer-credits">
+          Professional Cricket Scoring Made Simple • Made with ❤️ by <strong>Durgesh Sonar</strong>
+        </p>
+        <p class="footer-copy">
+          &copy; 2026 Cricket Score Counter. All Rights Reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactive JavaScript -->
+  <script src="js/script.js"></script>
+</body>
+</html>
