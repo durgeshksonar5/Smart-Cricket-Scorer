@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../controllers/match_controller.dart';
 import '../models/match_model.dart';
 import '../theme/app_theme.dart';
-import '../widgets/made_by_footer.dart';
+import '../widgets/app_footer.dart';
 import 'scorecard_screen.dart';
 
 class MatchConfirmationScreen extends StatelessWidget {
@@ -28,141 +28,146 @@ class MatchConfirmationScreen extends StatelessWidget {
         title: const Text('Match Ready'),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Match Ready Header Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppTheme.primaryEmerald.withValues(alpha: 0.2),
-                      AppTheme.cardBg,
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.primaryEmerald, width: 1.5),
-                ),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
-                    const Icon(Icons.check_circle_outline, color: AppTheme.primaryEmerald, size: 50),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'MATCH READY TO START',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.primaryEmerald,
-                        letterSpacing: 1.2,
+                    // Match Ready Header Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.primaryEmerald.withValues(alpha: 0.2),
+                            AppTheme.cardBg,
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.primaryEmerald, width: 1.5),
+                      ),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.check_circle_outline, color: AppTheme.primaryEmerald, size: 50),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'MATCH READY TO START',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.primaryEmerald,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '${match.teamA} vs ${match.teamB}',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${match.totalOvers} Overs  •  ${match.playersPerTeam} Players/Team${match.venue.isNotEmpty ? "  •  📍 ${match.venue}" : ""}',
+                            style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '${match.teamA} vs ${match.teamB}',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    const SizedBox(height: 24),
+
+                    // Toss Summary Breakdown
+                    _buildSectionTitle('🪙 TOSS SUMMARY'),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardBg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF2E5749)),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildRow('Toss Winner', toss.tossWinnerTeam, isHighlight: true),
+                          const Divider(color: Color(0xFF2E5749)),
+                          _buildRow('Toss Decision', toss.tossDecision),
+                          const Divider(color: Color(0xFF2E5749)),
+                          _buildRow('Coin Call', '${toss.callingTeam} called ${toss.tossCall}'),
+                          const Divider(color: Color(0xFF2E5749)),
+                          _buildRow('Coin Result', toss.coinResult),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${match.totalOvers} Overs  •  ${match.playersPerTeam} Players/Team${match.venue.isNotEmpty ? "  •  📍 ${match.venue}" : ""}',
-                      style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                    const SizedBox(height: 24),
+
+                    // 1st Innings Setup Card
+                    _buildSectionTitle('🏏 1ST INNINGS ASSIGNMENT'),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardBg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF2E5749)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Column(
+                            children: [
+                              const Text('🏏 Batting First', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                              const SizedBox(height: 4),
+                              Text(
+                                toss.battingTeam,
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald),
+                              ),
+                            ],
+                          ),
+                          const Icon(Icons.arrow_forward, color: AppTheme.coinGold),
+                          Column(
+                            children: [
+                              const Text('⚾ Bowling First', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                              const SizedBox(height: 4),
+                              Text(
+                                toss.bowlingTeam,
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.coinGold),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Start Match Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ScorecardScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.sports_cricket, color: Colors.black, size: 28),
+                        label: const Text('START MATCH SCORECARD', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Toss Summary Breakdown
-              _buildSectionTitle('🪙 TOSS SUMMARY'),
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF2E5749)),
-                ),
-                child: Column(
-                  children: [
-                    _buildRow('Toss Winner', toss.tossWinnerTeam, isHighlight: true),
-                    const Divider(color: Color(0xFF2E5749)),
-                    _buildRow('Toss Decision', toss.tossDecision),
-                    const Divider(color: Color(0xFF2E5749)),
-                    _buildRow('Coin Call', '${toss.callingTeam} called ${toss.tossCall}'),
-                    const Divider(color: Color(0xFF2E5749)),
-                    _buildRow('Coin Result', toss.coinResult),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 1st Innings Setup Card
-              _buildSectionTitle('🏏 1ST INNINGS ASSIGNMENT'),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF2E5749)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      children: [
-                        const Text('🏏 Batting First', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                        const SizedBox(height: 4),
-                        Text(
-                          toss.battingTeam,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald),
-                        ),
-                      ],
-                    ),
-                    const Icon(Icons.arrow_forward, color: AppTheme.coinGold),
-                    Column(
-                      children: [
-                        const Text('⚾ Bowling First', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                        const SizedBox(height: 4),
-                        Text(
-                          toss.bowlingTeam,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.coinGold),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Start Match Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ScorecardScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.sports_cricket, color: Colors.black, size: 28),
-                  label: const Text('START MATCH SCORECARD', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const MadeByFooter(),
-            ],
-          ),
+            ),
+            const AppFooter(),
+          ],
         ),
       ),
     );

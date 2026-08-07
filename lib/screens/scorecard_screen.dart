@@ -838,13 +838,20 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
         ),
       ),
       body: SafeArea(
-        child: TabBarView(
-          controller: _tabController,
+        child: Column(
           children: [
-            _buildScoreTab(context, controller, match),
-            _buildBallsTab(context, controller, match),
-            _buildBattingScorecardTab(context, match),
-            _buildBowlingScorecardTab(context, match),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildScoreTab(context, controller, match),
+                  _buildBallsTab(context, controller, match),
+                  _buildBattingScorecardTab(context, match),
+                  _buildBowlingScorecardTab(context, match),
+                ],
+              ),
+            ),
+            const AppFooter(padding: EdgeInsets.symmetric(vertical: 6)),
           ],
         ),
       ),
@@ -877,194 +884,326 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      child: Column(
-        children: [
-          // Top Header
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppTheme.cardBg,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF2E5749)),
-            ),
-            child: Column(
-              children: [
-                if (match.isFreeHit) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFFD500F9), Color(0xFFFF9100)]),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text('🔥 FREE HIT DELIVERED! 🚀', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top Header / Main Live Score Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBg,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppTheme.primaryEmerald.withValues(alpha: 0.35), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  const SizedBox(height: 4),
                 ],
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(match.battingTeam, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald), overflow: TextOverflow.ellipsis),
+              ),
+              child: Column(
+                children: [
+                  if (match.isFreeHit) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFFD500F9), Color(0xFFFF9100)]),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text('🔥 FREE HIT DELIVERED! 🚀', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5)),
                     ),
-                    Text('Inn ${match.currentInnings} • Overs: ${match.totalOvers}', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                    const SizedBox(height: 8),
                   ],
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text('${match.currentRuns}/${match.currentWickets}', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white)),
-                    const SizedBox(width: 8),
-                    Text('(${match.currentOversFormatted} Ov)', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.coinGold)),
-                  ],
-                ),
-                if (match.currentInnings == 2) ...[
-                  const SizedBox(height: 2),
-                  Text('Target: $target • Need $runsNeeded in $ballsRemaining balls', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald)),
-                ],
-              ],
-            ),
-          ),
-
-          // Prominent Batters Display Card
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: AppTheme.cardBgLight, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.primaryEmerald.withValues(alpha: 0.3))),
-            child: Column(
-              children: [
-                _buildBatterCardRow(context, controller, match.currentStrikerId, match.currentStriker, strikerStats, isStriker: true),
-                const Divider(color: Color(0xFF2E5749), height: 12),
-                _buildBatterCardRow(context, controller, match.currentNonStrikerId, match.currentNonStriker, nonStrikerStats, isStriker: false),
-              ],
-            ),
-          ),
-
-          // Prominent Bowler Display Card
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(color: AppTheme.cardBgLight, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.coinGold.withValues(alpha: 0.3))),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Text('⚽ ', style: TextStyle(fontSize: 13)),
-                    Text(match.currentBowler, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.coinGold)),
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                      icon: const Icon(Icons.edit, size: 13, color: AppTheme.textMuted),
-                      onPressed: () => _showEditPlayerNameModal(context, controller, match.currentBowlerId, match.currentBowler),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('${bowlerStats.oversFormatted} Ov • ${bowlerStats.runsConceded} R • ${bowlerStats.wickets} W', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                    Text('ECO: ${bowlerStats.economy.toStringAsFixed(2)}', style: const TextStyle(fontSize: 10, color: AppTheme.coinGold, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Recent Timeline Quick View
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: AppTheme.cardBgLight, borderRadius: BorderRadius.circular(10)),
-            child: Row(
-              children: [
-                const Text('Recent: ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    reverse: true,
-                    child: Row(
-                      children: match.currentBallHistory.isEmpty
-                          ? [const Text('No balls bowled yet', style: TextStyle(fontSize: 11, color: AppTheme.textMuted))]
-                          : match.currentBallHistory.map((b) => _buildBallBadgeWidget(b)).toList(),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                  icon: const Icon(Icons.undo, color: AppTheme.coinGold, size: 18),
-                  tooltip: 'Undo',
-                  onPressed: isActionsEnabled ? () => controller.undoLastBall() : null,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          // Scoring Controls Panel
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: AppTheme.cardBg,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              border: Border(top: BorderSide(color: Color(0xFF2E5749), width: 1)),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [0, 1, 2, 3, 4, 6].map((runs) {
-                    bool isBoundary = (runs == 4 || runs == 6);
-                    return Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        height: 44,
-                        child: ElevatedButton(
-                          onPressed: isActionsEnabled ? () => _handleRecordBall(controller, runs: runs) : null,
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            backgroundColor: isBoundary ? (runs == 6 ? const Color(0xFFD500F9) : AppTheme.primaryEmerald) : AppTheme.cardBgLight,
-                            foregroundColor: isBoundary ? Colors.black : Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: Text('$runs', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: isBoundary ? Colors.black : Colors.white)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          match.battingTeam,
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.primaryEmerald, letterSpacing: 0.5),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildExtraButton('WD', 'Wide', isActionsEnabled ? () => _showExtraRunsDialog(context, controller, 'WD') : null),
-                    const SizedBox(width: 8),
-                    _buildExtraButton('NB', 'No Ball', isActionsEnabled ? () => _showExtraRunsDialog(context, controller, 'NB') : null),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton.icon(
-                    onPressed: isActionsEnabled ? () => _handleWicketPressed(context, controller) : null,
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.dangerRed, foregroundColor: Colors.white),
-                    icon: const Icon(Icons.cancel, color: Colors.white, size: 18),
-                    label: const Text('OUT / WICKET ☝️', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBgLight,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF2E5749)),
+                        ),
+                        child: Text(
+                          'Inn ${match.currentInnings} • Overs: ${match.totalOvers}',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textMuted),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 8),
-                const MadeByFooter(padding: EdgeInsets.only(top: 4, bottom: 4)),
-              ],
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '${match.currentRuns}/${match.currentWickets}',
+                        style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '(${match.currentOversFormatted} Ov)',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.coinGold),
+                      ),
+                    ],
+                  ),
+                  if (match.currentInnings == 2) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryEmerald.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Target: $target • Need $runsNeeded in $ballsRemaining balls',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-        ],
+
+            const SizedBox(height: 12),
+
+            // Prominent Batters Display Card
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBgLight,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.primaryEmerald.withValues(alpha: 0.25), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  _buildBatterCardRow(context, controller, match.currentStrikerId, match.currentStriker, strikerStats, isStriker: true),
+                  const Divider(color: Color(0xFF2E5749), height: 16, thickness: 1),
+                  _buildBatterCardRow(context, controller, match.currentNonStrikerId, match.currentNonStriker, nonStrikerStats, isStriker: false),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Prominent Bowler Display Card
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBgLight,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.coinGold.withValues(alpha: 0.3), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Text('⚽ ', style: TextStyle(fontSize: 14)),
+                        Flexible(
+                          child: Text(
+                            match.currentBowler,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.coinGold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _showEditPlayerNameModal(context, controller, match.currentBowlerId, match.currentBowler),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4.0),
+                            child: Icon(Icons.edit, size: 14, color: AppTheme.textMuted),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${bowlerStats.oversFormatted} Ov • ${bowlerStats.runsConceded} R • ${bowlerStats.wickets} W',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'ECO: ${bowlerStats.economy.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 11, color: AppTheme.coinGold, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Recent Timeline Quick View
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBgLight,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF2E5749).withValues(alpha: 0.6)),
+              ),
+              child: Row(
+                children: [
+                  const Text('Recent: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textMuted)),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      reverse: true,
+                      child: Row(
+                        children: match.currentBallHistory.isEmpty
+                            ? [const Text('No balls bowled yet', style: TextStyle(fontSize: 12, color: AppTheme.textMuted))]
+                            : match.currentBallHistory.map((b) => _buildBallBadgeWidget(b)).toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: isActionsEnabled ? () => controller.undoLastBall() : null,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBg,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: isActionsEnabled ? AppTheme.coinGold.withValues(alpha: 0.5) : Colors.grey.withValues(alpha: 0.3)),
+                        ),
+                        child: Icon(
+                          Icons.undo,
+                          color: isActionsEnabled ? AppTheme.coinGold : Colors.grey,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Scoring Controls Panel Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBg,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF2E5749), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.touch_app, size: 16, color: AppTheme.primaryEmerald),
+                        SizedBox(width: 6),
+                        Text(
+                          'SCORING CONTROLS',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald, letterSpacing: 1.1),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: [0, 1, 2, 3, 4, 6].map((runs) {
+                      bool isBoundary = (runs == 4 || runs == 6);
+                      return Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: isActionsEnabled ? () => _handleRecordBall(controller, runs: runs) : null,
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              backgroundColor: isBoundary ? (runs == 6 ? const Color(0xFFD500F9) : AppTheme.primaryEmerald) : AppTheme.cardBgLight,
+                              foregroundColor: isBoundary ? Colors.black : Colors.white,
+                              elevation: isBoundary ? 4 : 1,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              side: isBoundary ? BorderSide.none : const BorderSide(color: Color(0xFF2E5749), width: 1),
+                            ),
+                            child: Text(
+                              '$runs',
+                              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: isBoundary ? Colors.black : Colors.white),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _buildExtraButton('WD (Wide)', 'Wide', isActionsEnabled ? () => _showExtraRunsDialog(context, controller, 'WD') : null),
+                      const SizedBox(width: 10),
+                      _buildExtraButton('NB (No Ball)', 'No Ball', isActionsEnabled ? () => _showExtraRunsDialog(context, controller, 'NB') : null),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: isActionsEnabled ? () => _handleWicketPressed(context, controller) : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.dangerRed,
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.cancel, color: Colors.white, size: 20),
+                      label: const Text('OUT / WICKET ☝️', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -1073,21 +1212,48 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Text(isStriker ? '★ ' : '   ', style: const TextStyle(color: AppTheme.primaryEmerald, fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(playerName, style: TextStyle(fontSize: 14, fontWeight: isStriker ? FontWeight.w900 : FontWeight.bold, color: isStriker ? AppTheme.primaryEmerald : Colors.white)),
-            IconButton(
-              icon: const Icon(Icons.edit, size: 14, color: AppTheme.textMuted),
-              onPressed: () => _showEditPlayerNameModal(context, controller, playerId, playerName),
-            ),
-          ],
+        Expanded(
+          child: Row(
+            children: [
+              Text(
+                isStriker ? '★ ' : '   ',
+                style: const TextStyle(color: AppTheme.primaryEmerald, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Flexible(
+                child: Text(
+                  playerName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isStriker ? FontWeight.w900 : FontWeight.w700,
+                    color: isStriker ? AppTheme.primaryEmerald : Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => _showEditPlayerNameModal(context, controller, playerId, playerName),
+                child: const Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: Icon(Icons.edit, size: 14, color: AppTheme.textMuted),
+                ),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('${stats.runs} (${stats.balls})', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white)),
-            Text('${stats.fours}×4  ${stats.sixes}×6  SR ${stats.strikeRate.toStringAsFixed(1)}', style: const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
+            Text(
+              '${stats.runs} (${stats.balls})',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${stats.fours}×4  ${stats.sixes}×6  SR ${stats.strikeRate.toStringAsFixed(1)}',
+              style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
       ],
@@ -1097,12 +1263,14 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
   // 2. BALLS TAB
   Widget _buildBallsTab(BuildContext context, MatchController controller, MatchModel match) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('COMPLETE BALL-BY-BALL HISTORY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppTheme.coinGold, letterSpacing: 1.1)),
-          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10, left: 4),
+            child: Text('COMPLETE BALL-BY-BALL HISTORY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppTheme.coinGold, letterSpacing: 1.1)),
+          ),
           Expanded(
             child: match.currentOvers.isEmpty
                 ? const Center(child: Text('No deliveries bowled yet.', style: TextStyle(color: AppTheme.textMuted)))
@@ -1114,21 +1282,42 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
                       OverModel over = match.currentOvers[realOverIdx];
                       bool isCurrent = (index == 0);
                       return Card(
-                        color: isCurrent ? AppTheme.cardBg : const Color(0xFF1E342B),
-                        margin: const EdgeInsets.only(bottom: 8),
+                        elevation: isCurrent ? 4 : 2,
+                        color: isCurrent ? AppTheme.cardBg : const Color(0xFF1B332B),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: isCurrent ? AppTheme.primaryEmerald.withValues(alpha: 0.5) : const Color(0xFF2E5749),
+                            width: isCurrent ? 1.5 : 1,
+                          ),
+                        ),
                         child: Padding(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(14),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('OVER ${over.overNumber} ${isCurrent ? " (CURRENT)" : ""}', style: TextStyle(fontWeight: FontWeight.bold, color: isCurrent ? AppTheme.primaryEmerald : Colors.white)),
-                                  Text('Over Runs: ${over.totalRuns} (${over.wickets} Wkts)', style: const TextStyle(color: AppTheme.coinGold, fontWeight: FontWeight.bold, fontSize: 12)),
+                                  Text(
+                                    'OVER ${over.overNumber} ${isCurrent ? " (CURRENT)" : ""}',
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: isCurrent ? AppTheme.primaryEmerald : Colors.white),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.cardBgLight,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      'Runs: ${over.totalRuns} (${over.wickets} Wkts)',
+                                      style: const TextStyle(color: AppTheme.coinGold, fontWeight: FontWeight.bold, fontSize: 12),
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                               SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
@@ -1162,45 +1351,56 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
     List<BatterStats> statsList = match.getBattingStatsForInnings(match.currentInnings);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('BATTING SCORECARD - ${match.battingTeam.toUpperCase()}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald, letterSpacing: 1.1)),
-          const SizedBox(height: 8),
-          Table(
-            columnWidths: const {
-              0: FlexColumnWidth(2.5),
-              1: FlexColumnWidth(2.0),
-              2: FlexColumnWidth(0.8),
-              3: FlexColumnWidth(0.8),
-              4: FlexColumnWidth(0.8),
-              5: FlexColumnWidth(0.8),
-              6: FlexColumnWidth(1.2),
-            },
-            border: TableBorder.all(color: const Color(0xFF2E5749)),
-            children: [
-              TableRow(
-                decoration: const BoxDecoration(color: AppTheme.cardBgLight),
-                children: ['Player', 'Dismissal', 'R', 'B', '4s', '6s', 'SR'].map((h) => Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(h, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.coinGold)),
-                )).toList(),
-              ),
-              ...statsList.map((s) {
-                return TableRow(
-                  children: [
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text(s.playerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text(s.dismissalInfo, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text('${s.runs}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text('${s.balls}', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text('${s.fours}', style: const TextStyle(fontSize: 11, color: Colors.white))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text('${s.sixes}', style: const TextStyle(fontSize: 11, color: Colors.white))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text(s.strikeRate.toStringAsFixed(1), style: const TextStyle(fontSize: 11, color: AppTheme.coinGold))),
-                  ],
-                );
-              }),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.primaryEmerald.withValues(alpha: 0.3)),
+            ),
+            child: Text('BATTING SCORECARD - ${match.battingTeam.toUpperCase()}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald, letterSpacing: 1.1)),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(2.5),
+                1: FlexColumnWidth(2.0),
+                2: FlexColumnWidth(0.8),
+                3: FlexColumnWidth(0.8),
+                4: FlexColumnWidth(0.8),
+                5: FlexColumnWidth(0.8),
+                6: FlexColumnWidth(1.2),
+              },
+              border: TableBorder.all(color: const Color(0xFF2E5749), width: 1),
+              children: [
+                TableRow(
+                  decoration: const BoxDecoration(color: AppTheme.cardBgLight),
+                  children: ['Player', 'Dismissal', 'R', 'B', '4s', '6s', 'SR'].map((h) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
+                    child: Text(h, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.coinGold)),
+                  )).toList(),
+                ),
+                ...statsList.map((s) {
+                  return TableRow(
+                    children: [
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text(s.playerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text(s.dismissalInfo, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text('${s.runs}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text('${s.balls}', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text('${s.fours}', style: const TextStyle(fontSize: 11, color: Colors.white))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text('${s.sixes}', style: const TextStyle(fontSize: 11, color: Colors.white))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text(s.strikeRate.toStringAsFixed(1), style: const TextStyle(fontSize: 11, color: AppTheme.coinGold))),
+                    ],
+                  );
+                }),
+              ],
+            ),
           ),
         ],
       ),
@@ -1212,43 +1412,54 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
     List<BowlerStats> statsList = match.getBowlingStatsForInnings(match.currentInnings);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('BOWLING SCORECARD - ${match.bowlingTeam.toUpperCase()}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppTheme.coinGold, letterSpacing: 1.1)),
-          const SizedBox(height: 8),
-          Table(
-            columnWidths: const {
-              0: FlexColumnWidth(2.5),
-              1: FlexColumnWidth(1.0),
-              2: FlexColumnWidth(0.8),
-              3: FlexColumnWidth(0.8),
-              4: FlexColumnWidth(0.8),
-              5: FlexColumnWidth(1.2),
-            },
-            border: TableBorder.all(color: const Color(0xFF2E5749)),
-            children: [
-              TableRow(
-                decoration: const BoxDecoration(color: AppTheme.cardBgLight),
-                children: ['Bowler', 'O', 'M', 'R', 'W', 'ECO'].map((h) => Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(h, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.coinGold)),
-                )).toList(),
-              ),
-              ...statsList.map((s) {
-                return TableRow(
-                  children: [
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text(s.bowlerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text(s.oversFormatted, style: const TextStyle(fontSize: 11, color: Colors.white))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text('${s.maidens}', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text('${s.runsConceded}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text('${s.wickets}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.dangerRed))),
-                    Padding(padding: const EdgeInsets.all(8.0), child: Text(s.economy.toStringAsFixed(2), style: const TextStyle(fontSize: 11, color: AppTheme.coinGold))),
-                  ],
-                );
-              }),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.coinGold.withValues(alpha: 0.3)),
+            ),
+            child: Text('BOWLING SCORECARD - ${match.bowlingTeam.toUpperCase()}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppTheme.coinGold, letterSpacing: 1.1)),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(2.5),
+                1: FlexColumnWidth(1.0),
+                2: FlexColumnWidth(0.8),
+                3: FlexColumnWidth(0.8),
+                4: FlexColumnWidth(0.8),
+                5: FlexColumnWidth(1.2),
+              },
+              border: TableBorder.all(color: const Color(0xFF2E5749), width: 1),
+              children: [
+                TableRow(
+                  decoration: const BoxDecoration(color: AppTheme.cardBgLight),
+                  children: ['Bowler', 'O', 'M', 'R', 'W', 'ECO'].map((h) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
+                    child: Text(h, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.coinGold)),
+                  )).toList(),
+                ),
+                ...statsList.map((s) {
+                  return TableRow(
+                    children: [
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text(s.bowlerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text(s.oversFormatted, style: const TextStyle(fontSize: 11, color: Colors.white))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text('${s.maidens}', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text('${s.runsConceded}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text('${s.wickets}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.dangerRed))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0), child: Text(s.economy.toStringAsFixed(2), style: const TextStyle(fontSize: 11, color: AppTheme.coinGold))),
+                    ],
+                  );
+                }),
+              ],
+            ),
           ),
         ],
       ),
@@ -1286,14 +1497,21 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
     }
 
     Widget badge = Container(
-      margin: const EdgeInsets.only(right: 5),
-      padding: const EdgeInsets.symmetric(horizontal: 5),
-      height: 26,
-      constraints: const BoxConstraints(minWidth: 26),
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      height: 28,
+      constraints: const BoxConstraints(minWidth: 28),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(14),
         border: border,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Center(
         child: Text(
@@ -1316,17 +1534,18 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
   Widget _buildExtraButton(String label, String tooltip, VoidCallback? onTap) {
     return Expanded(
       child: SizedBox(
-        height: 40,
+        height: 44,
         child: ElevatedButton(
           onPressed: onTap,
           style: ElevatedButton.styleFrom(
             padding: EdgeInsets.zero,
             backgroundColor: AppTheme.cardBgLight,
-            side: const BorderSide(color: Color(0xFF2E5749)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            side: const BorderSide(color: Color(0xFF2E5749), width: 1),
           ),
           child: Text(
             label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.coinGold),
+            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppTheme.coinGold),
           ),
         ),
       ),
