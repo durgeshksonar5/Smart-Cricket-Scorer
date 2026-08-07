@@ -247,6 +247,7 @@ class MatchController extends ChangeNotifier with WidgetsBindingObserver {
 
     if (activeOver.isComplete) {
       _swapStriker();
+      match.previousBowlerId = match.currentBowlerId;
       match.isOverCompleteWaiting = true;
     }
 
@@ -298,10 +299,28 @@ class MatchController extends ChangeNotifier with WidgetsBindingObserver {
     _currentMatch!.currentNonStrikerId = tempId;
   }
 
+  void setOpeningPlayers({
+    required PlayerModel striker,
+    required PlayerModel nonStriker,
+    required PlayerModel bowler,
+  }) {
+    if (_currentMatch == null) return;
+    _currentMatch!.currentStriker = striker.name;
+    _currentMatch!.currentStrikerId = striker.id;
+    _currentMatch!.currentNonStriker = nonStriker.name;
+    _currentMatch!.currentNonStrikerId = nonStriker.id;
+    _currentMatch!.currentBowler = bowler.name;
+    _currentMatch!.currentBowlerId = bowler.id;
+    _currentMatch!.isOpeningSelectionPending = false;
+    _autoSaveActiveMatch();
+    notifyListeners();
+  }
+
   void startNextOver({PlayerModel? nextBowler}) {
     if (_currentMatch == null) return;
     _currentMatch!.isOverCompleteWaiting = false;
     if (nextBowler != null) {
+      _currentMatch!.previousBowlerId = _currentMatch!.currentBowlerId;
       _currentMatch!.currentBowler = nextBowler.name;
       _currentMatch!.currentBowlerId = nextBowler.id;
     }
@@ -340,6 +359,36 @@ class MatchController extends ChangeNotifier with WidgetsBindingObserver {
       _currentMatch!.currentNonStriker = incomingBatter.name;
       _currentMatch!.currentNonStrikerId = incomingBatter.id;
     }
+    _autoSaveActiveMatch();
+    notifyListeners();
+  }
+
+  void changeStriker(PlayerModel striker) {
+    if (_currentMatch == null) return;
+    _currentMatch!.currentStriker = striker.name;
+    _currentMatch!.currentStrikerId = striker.id;
+    _autoSaveActiveMatch();
+    notifyListeners();
+  }
+
+  void changeNonStriker(PlayerModel nonStriker) {
+    if (_currentMatch == null) return;
+    _currentMatch!.currentNonStriker = nonStriker.name;
+    _currentMatch!.currentNonStrikerId = nonStriker.id;
+    _autoSaveActiveMatch();
+    notifyListeners();
+  }
+
+  void changeBowler(PlayerModel bowler) {
+    if (_currentMatch == null) return;
+    _currentMatch!.currentBowler = bowler.name;
+    _currentMatch!.currentBowlerId = bowler.id;
+    _autoSaveActiveMatch();
+    notifyListeners();
+  }
+
+  void swapStrikerAndNonStriker() {
+    _swapStriker();
     _autoSaveActiveMatch();
     notifyListeners();
   }
@@ -459,6 +508,8 @@ class MatchController extends ChangeNotifier with WidgetsBindingObserver {
     match.status = MatchStatus.inningsBreak;
     match.isFreeHit = false;
     match.isOverCompleteWaiting = false;
+    match.isOpeningSelectionPending = true;
+    match.previousBowlerId = null;
 
     String tempTeam = match.battingTeam;
     match.battingTeam = match.bowlingTeam;

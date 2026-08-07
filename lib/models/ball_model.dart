@@ -18,6 +18,18 @@ class BallModel {
   final String? dismissedBatterId;
   final String? fielderName;
 
+  bool get isWide => extraType == 'WD';
+  bool get isNoBall => extraType == 'NB';
+  int get totalRuns => runs;
+  int get batterRuns {
+    if (extraType == 'WD' || extraType == 'BYE' || extraType == 'B' || extraType == 'LB') {
+      return 0;
+    } else if (extraType == 'NB') {
+      return runs > 0 ? runs - 1 : 0;
+    }
+    return runs;
+  }
+
   BallModel({
     required this.overNumber,
     required this.ballInOver,

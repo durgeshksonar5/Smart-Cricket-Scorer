@@ -7,6 +7,7 @@ import '../models/ball_model.dart';
 import '../models/player_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/made_by_footer.dart';
+import '../widgets/opening_players_dialog.dart';
 import 'match_summary_screen.dart';
 
 class ScorecardScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class ScorecardScreen extends StatefulWidget {
 class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isOverCompleteDialogOpen = false;
+  bool _isOpeningDialogOpen = false;
 
   @override
   void initState() {
@@ -250,6 +252,15 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
     List<PlayerModel> squad = match.currentBattingSquad;
     List<BatterStats> stats = match.getBattingStatsForInnings(match.currentInnings);
 
+    BatterStats? outStats = stats.cast<BatterStats?>().firstWhere(
+      (s) => s?.playerId == dismissedBatterId,
+      orElse: () => null,
+    );
+
+    String outName = outStats?.playerName ?? (dismissedBatterId == match.currentStrikerId ? match.currentStriker : match.currentNonStriker);
+    int outRuns = outStats?.runs ?? 0;
+    int outBalls = outStats?.balls ?? 0;
+
     Set<String> dismissedIds = stats.where((s) => s.isOut).map((s) => s.playerId).toSet();
     dismissedIds.add(match.currentStrikerId);
     dismissedIds.add(match.currentNonStrikerId);
@@ -270,11 +281,41 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // WICKET! Out Banner Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.dangerRed.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.dangerRed, width: 1.5),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'WICKET! ☝️',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.dangerRed, letterSpacing: 1.1),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$outName OUT',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$outRuns ($outBalls)',
+                      style: const TextStyle(fontSize: 14, color: AppTheme.coinGold, fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                ),
+              ),
+
               const Row(
                 children: [
                   Icon(Icons.person_add, color: AppTheme.primaryEmerald, size: 22),
                   SizedBox(width: 8),
-                  Text('SELECT INCOMING BATTER', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald)),
+                  Text('SELECT NEW BATSMAN', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald, letterSpacing: 0.5)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -286,6 +327,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
                     PlayerModel player = availableBatters[index];
                     return Card(
                       color: AppTheme.cardBgLight,
+                      margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         leading: const Icon(Icons.sports_cricket, color: AppTheme.coinGold),
                         title: Text(player.name, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
@@ -293,6 +335,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
                         onTap: () {
                           Navigator.pop(ctx);
                           controller.replaceBatter(dismissedBatterId: dismissedBatterId, incomingBatter: player);
+                          _showNewBatterConfirmationModal(context, player);
                         },
                       ),
                     );
@@ -302,6 +345,183 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
             ],
           ),
         );
+      },
+    );
+  }
+
+  void _showNewBatterConfirmationModal(BuildContext context, PlayerModel newBatter) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppTheme.cardBg,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppTheme.primaryEmerald, width: 2),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.person, color: AppTheme.primaryEmerald, size: 48),
+              const SizedBox(height: 8),
+              const Text('NEW BATSMAN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald, letterSpacing: 1.1)),
+              const SizedBox(height: 12),
+              Text(newBatter.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryEmerald, foregroundColor: Colors.black),
+                  child: const Text('CONTINUE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showChangePlayerModal(BuildContext context, MatchController controller, String role, String currentId) {
+    MatchModel? match = controller.currentMatch;
+    if (match == null) return;
+    if (!match.isEditable) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🔒 Editing locked for this match.')));
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardBg,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) {
+        if (role == 'Striker' || role == 'Non-Striker') {
+          List<PlayerModel> squad = match.currentBattingSquad;
+          List<BatterStats> stats = match.getBattingStatsForInnings(match.currentInnings);
+          Set<String> outIds = stats.where((s) => s.isOut).map((s) => s.playerId).toSet();
+          String otherId = role == 'Striker' ? match.currentNonStrikerId : match.currentStrikerId;
+
+          List<PlayerModel> available = squad.where((p) => !outIds.contains(p.id) && p.id != otherId).toList();
+
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('SELECT $role', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald)),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        controller.swapStrikerAndNonStriker();
+                      },
+                      icon: const Icon(Icons.swap_horiz, color: AppTheme.coinGold, size: 20),
+                      label: const Text('Swap Batters 🔄', style: TextStyle(color: AppTheme.coinGold, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: available.length,
+                    itemBuilder: (context, index) {
+                      PlayerModel p = available[index];
+                      bool isCurrent = p.id == currentId;
+                      return Card(
+                        color: isCurrent ? AppTheme.primaryEmerald.withValues(alpha: 0.2) : AppTheme.cardBgLight,
+                        child: ListTile(
+                          title: Text(p.name, style: TextStyle(color: Colors.white, fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, size: 18, color: AppTheme.textMuted),
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  _showEditPlayerNameModal(context, controller, p.id, p.name);
+                                },
+                              ),
+                              if (isCurrent) const Icon(Icons.check_circle, color: AppTheme.primaryEmerald),
+                            ],
+                          ),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            if (role == 'Striker') {
+                              controller.changeStriker(p);
+                            } else {
+                              controller.changeNonStriker(p);
+                            }
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          List<PlayerModel> bowlSquad = match.currentBowlingSquad;
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('SELECT BOWLER', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.coinGold)),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: bowlSquad.length,
+                    itemBuilder: (context, index) {
+                      PlayerModel b = bowlSquad[index];
+                      bool isCurrent = b.id == match.currentBowlerId;
+                      bool isConsecutive = b.id == match.previousBowlerId && bowlSquad.length > 1;
+
+                      return Card(
+                        color: isCurrent ? AppTheme.coinGold.withValues(alpha: 0.2) : AppTheme.cardBgLight,
+                        child: ListTile(
+                          enabled: !isConsecutive,
+                          title: Text(
+                            '${b.name}${isConsecutive ? " (Cannot bowl consecutive overs)" : ""}',
+                            style: TextStyle(color: isConsecutive ? Colors.grey : Colors.white, fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, size: 18, color: AppTheme.textMuted),
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  _showEditPlayerNameModal(context, controller, b.id, b.name);
+                                },
+                              ),
+                              if (isCurrent) const Icon(Icons.check_circle, color: AppTheme.coinGold),
+                            ],
+                          ),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            controller.changeBowler(b);
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
       },
     );
   }
@@ -481,9 +701,13 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
 
   void _showOverCompleteDialog(BuildContext context, MatchController controller, MatchModel match, OverModel over) {
     List<PlayerModel> bowlingSquad = match.currentBowlingSquad;
+    String prevBowlerId = match.previousBowlerId ?? match.currentBowlerId;
     PlayerModel? selectedNextBowler = bowlingSquad.firstWhere(
-      (b) => b.id != match.currentBowlerId,
-      orElse: () => bowlingSquad.isNotEmpty ? bowlingSquad.first : PlayerModel(id: 'temp', name: match.currentBowler),
+      (b) => b.id != prevBowlerId && b.id != match.currentBowlerId,
+      orElse: () => bowlingSquad.firstWhere(
+        (b) => b.id != match.currentBowlerId,
+        orElse: () => bowlingSquad.isNotEmpty ? bowlingSquad.first : PlayerModel(id: 'temp', name: match.currentBowler),
+      ),
     );
 
     double runRate = match.currentBalls > 0 ? (match.currentRuns / (match.currentBalls / 6)) : 0.0;
@@ -495,6 +719,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
         builder: (context, setModalState) {
           return Dialog(
             backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -557,14 +782,26 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
                     const SizedBox(height: 6),
                     DropdownButtonFormField<PlayerModel>(
                       initialValue: selectedNextBowler,
+                      isExpanded: true,
                       dropdownColor: AppTheme.cardBgLight,
-                      decoration: InputDecoration(filled: true, fillColor: AppTheme.cardBgLight, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: AppTheme.cardBgLight,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                       items: bowlingSquad.map((b) {
-                        bool isConsecutive = (b.id == match.currentBowlerId && bowlingSquad.length > 1);
+                        bool isConsecutive = (b.id == match.currentBowlerId || b.id == match.previousBowlerId) && bowlingSquad.length > 1;
                         return DropdownMenuItem<PlayerModel>(
-                          value: b,
+                          value: isConsecutive ? null : b,
                           enabled: !isConsecutive,
-                          child: Text('${b.name}${isConsecutive ? " (Cannot bowl consecutive overs)" : ""}', style: TextStyle(color: isConsecutive ? Colors.grey : Colors.white, fontSize: 13)),
+                          child: Text(
+                            '${b.name}${isConsecutive ? " (Cannot bowl consecutive overs)" : ""}',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(color: isConsecutive ? Colors.grey : Colors.white, fontSize: 13),
+                          ),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -803,6 +1040,30 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
       });
     }
 
+    if (match.isOpeningSelectionPending && !_isOpeningDialogOpen && !match.isCompleted) {
+      _isOpeningDialogOpen = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => OpeningPlayersDialog(
+              match: match,
+              onConfirm: (striker, nonStriker, bowler) {
+                Navigator.pop(ctx);
+                _isOpeningDialogOpen = false;
+                controller.setOpeningPlayers(
+                  striker: striker,
+                  nonStriker: nonStriker,
+                  bowler: bowler,
+                );
+              },
+            ),
+          );
+        }
+      });
+    }
+
     if (match.isOverCompleteWaiting && !_isOverCompleteDialogOpen) {
       _isOverCompleteDialogOpen = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -864,7 +1125,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
     int runsNeeded = target - match.inn2Runs;
     int maxBalls = match.maxBalls;
     int ballsRemaining = maxBalls - match.inn2Balls;
-    bool isActionsEnabled = !match.isOverCompleteWaiting && match.isEditable && !match.isCompleted;
+    bool isActionsEnabled = !match.isOpeningSelectionPending && !match.isOverCompleteWaiting && match.isEditable && !match.isCompleted;
 
     List<BatterStats> currentBattingStats = match.getBattingStatsForInnings(match.currentInnings);
     BatterStats strikerStats = currentBattingStats.firstWhere(
@@ -997,7 +1258,15 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
                 ],
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '🏏 BATTERS',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppTheme.primaryEmerald, letterSpacing: 1.1),
+                    ),
+                  ),
                   _buildBatterCardRow(context, controller, match.currentStrikerId, match.currentStriker, strikerStats, isStriker: true),
                   const Divider(color: Color(0xFF2E5749), height: 16, thickness: 1),
                   _buildBatterCardRow(context, controller, match.currentNonStrikerId, match.currentNonStriker, nonStrikerStats, isStriker: false),
@@ -1009,7 +1278,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
 
             // Prominent Bowler Display Card
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppTheme.cardBgLight,
                 borderRadius: BorderRadius.circular(16),
@@ -1022,43 +1291,57 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        const Text('⚽ ', style: TextStyle(fontSize: 14)),
-                        Flexible(
-                          child: Text(
-                            match.currentBowler,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.coinGold),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => _showEditPlayerNameModal(context, controller, match.currentBowlerId, match.currentBowler),
-                          child: const Padding(
-                            padding: EdgeInsets.all(4.0),
-                            child: Icon(Icons.edit, size: 14, color: AppTheme.textMuted),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '${bowlerStats.oversFormatted} Ov • ${bowlerStats.runsConceded} R • ${bowlerStats.wickets} W',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
+                      const Text(
+                        '🎯 BOWLER',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppTheme.coinGold, letterSpacing: 1.1),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'ECO: ${bowlerStats.economy.toStringAsFixed(2)}',
-                        style: const TextStyle(fontSize: 11, color: AppTheme.coinGold, fontWeight: FontWeight.w700),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => _showChangePlayerModal(context, controller, 'Bowler', match.currentBowlerId),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          child: Text('✏️', style: TextStyle(fontSize: 13)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                match.currentBowler,
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${bowlerStats.oversFormatted} - ${bowlerStats.maidens} - ${bowlerStats.runsConceded} - ${bowlerStats.wickets}',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppTheme.coinGold),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'ECO: ${bowlerStats.economy.toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1216,8 +1499,8 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
           child: Row(
             children: [
               Text(
-                isStriker ? '★ ' : '   ',
-                style: const TextStyle(color: AppTheme.primaryEmerald, fontSize: 16, fontWeight: FontWeight.bold),
+                isStriker ? '⭐ ' : '    ',
+                style: const TextStyle(color: AppTheme.coinGold, fontSize: 15, fontWeight: FontWeight.bold),
               ),
               Flexible(
                 child: Text(
@@ -1230,12 +1513,13 @@ class _ScorecardScreenState extends State<ScorecardScreen> with SingleTickerProv
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 4),
               InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () => _showEditPlayerNameModal(context, controller, playerId, playerName),
+                onTap: () => _showChangePlayerModal(context, controller, isStriker ? 'Striker' : 'Non-Striker', playerId),
                 child: const Padding(
                   padding: EdgeInsets.all(4.0),
-                  child: Icon(Icons.edit, size: 14, color: AppTheme.textMuted),
+                  child: Text('✏️', style: TextStyle(fontSize: 12)),
                 ),
               ),
             ],

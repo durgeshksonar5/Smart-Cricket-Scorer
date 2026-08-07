@@ -106,6 +106,9 @@ class MatchModel {
   String currentBowler;
   String currentBowlerId;
 
+  bool isOpeningSelectionPending;
+  String? previousBowlerId;
+
   bool isCompleted;
   bool isFreeHit;
   bool isOverCompleteWaiting;
@@ -147,6 +150,8 @@ class MatchModel {
     this.currentNonStrikerId = 'bat_2',
     this.currentBowler = 'Bowler 1',
     this.currentBowlerId = 'bowl_1',
+    this.isOpeningSelectionPending = true,
+    this.previousBowlerId,
     this.isCompleted = false,
     this.isFreeHit = false,
     this.isOverCompleteWaiting = false,
@@ -401,6 +406,8 @@ class MatchModel {
       'currentNonStrikerId': currentNonStrikerId,
       'currentBowler': currentBowler,
       'currentBowlerId': currentBowlerId,
+      'isOpeningSelectionPending': isOpeningSelectionPending,
+      'previousBowlerId': previousBowlerId,
       'isCompleted': isCompleted,
       'isFreeHit': isFreeHit,
       'isOverCompleteWaiting': isOverCompleteWaiting,
@@ -468,6 +475,8 @@ class MatchModel {
       currentNonStrikerId: json['currentNonStrikerId'] ?? 'bat_2',
       currentBowler: json['currentBowler'] ?? 'Bowler 1',
       currentBowlerId: json['currentBowlerId'] ?? 'bowl_1',
+      isOpeningSelectionPending: json['isOpeningSelectionPending'] ?? false,
+      previousBowlerId: json['previousBowlerId'],
       isCompleted: json['isCompleted'] ?? false,
       isFreeHit: json['isFreeHit'] ?? false,
       isOverCompleteWaiting: json['isOverCompleteWaiting'] ?? false,
