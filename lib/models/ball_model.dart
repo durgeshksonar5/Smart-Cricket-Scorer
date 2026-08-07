@@ -8,9 +8,15 @@ class BallModel {
   final bool isWicket;
   final String? extraType; // 'WD', 'NB', 'BYE', 'LB'
   final String striker;
+  final String strikerId;
   final String nonStriker;
+  final String nonStrikerId;
   final String bowler;
+  final String bowlerId;
   final String teamScoreSnapshot; // e.g. "72/2"
+  final String? dismissalType; // 'Bowled', 'Caught', 'LBW', 'Run Out', 'Stumped', 'Hit Wicket', 'Retired Out'
+  final String? dismissedBatterId;
+  final String? fielderName;
 
   BallModel({
     required this.overNumber,
@@ -22,9 +28,15 @@ class BallModel {
     required this.isWicket,
     this.extraType,
     required this.striker,
+    required this.strikerId,
     required this.nonStriker,
+    required this.nonStrikerId,
     required this.bowler,
+    required this.bowlerId,
     required this.teamScoreSnapshot,
+    this.dismissalType,
+    this.dismissedBatterId,
+    this.fielderName,
   });
 
   Map<String, dynamic> toJson() {
@@ -38,9 +50,15 @@ class BallModel {
       'isWicket': isWicket,
       'extraType': extraType,
       'striker': striker,
+      'strikerId': strikerId,
       'nonStriker': nonStriker,
+      'nonStrikerId': nonStrikerId,
       'bowler': bowler,
+      'bowlerId': bowlerId,
       'teamScoreSnapshot': teamScoreSnapshot,
+      'dismissalType': dismissalType,
+      'dismissedBatterId': dismissedBatterId,
+      'fielderName': fielderName,
     };
   }
 
@@ -55,9 +73,15 @@ class BallModel {
       isWicket: json['isWicket'] ?? false,
       extraType: json['extraType'],
       striker: json['striker'] ?? 'Striker',
+      strikerId: json['strikerId'] ?? json['striker'] ?? 'striker_id',
       nonStriker: json['nonStriker'] ?? 'Non-Striker',
+      nonStrikerId: json['nonStrikerId'] ?? json['nonStriker'] ?? 'non_striker_id',
       bowler: json['bowler'] ?? 'Bowler',
+      bowlerId: json['bowlerId'] ?? json['bowler'] ?? 'bowler_id',
       teamScoreSnapshot: json['teamScoreSnapshot'] ?? '0/0',
+      dismissalType: json['dismissalType'],
+      dismissedBatterId: json['dismissedBatterId'],
+      fielderName: json['fielderName'],
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/match_controller.dart';
+import '../models/player_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/made_by_footer.dart';
 import 'coin_toss_screen.dart';
@@ -24,12 +25,38 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
   int _selectedOvers = 20;
   bool _isCustomMode = false;
 
+  List<TextEditingController> _teamAPlayerCtrls = [];
+  List<TextEditingController> _teamBPlayerCtrls = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initSquadControllers(11);
+  }
+
+  void _initSquadControllers(int count) {
+    for (var c in _teamAPlayerCtrls) {
+      c.dispose();
+    }
+    for (var c in _teamBPlayerCtrls) {
+      c.dispose();
+    }
+    _teamAPlayerCtrls = List.generate(count, (i) => TextEditingController(text: '${_battingTeamCtrl.text.trim()} Player ${i + 1}'));
+    _teamBPlayerCtrls = List.generate(count, (i) => TextEditingController(text: '${_bowlingTeamCtrl.text.trim()} Player ${i + 1}'));
+  }
+
   @override
   void dispose() {
     _battingTeamCtrl.dispose();
     _bowlingTeamCtrl.dispose();
     _oversCtrl.dispose();
     _playersCtrl.dispose();
+    for (var c in _teamAPlayerCtrls) {
+      c.dispose();
+    }
+    for (var c in _teamBPlayerCtrls) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -39,6 +66,22 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
     int overs = int.tryParse(_oversCtrl.text) ?? _selectedOvers;
     int players = int.tryParse(_playersCtrl.text) ?? 11;
 
+    List<PlayerModel> teamAPlayers = List.generate(
+      _teamAPlayerCtrls.length,
+      (i) => PlayerModel(
+        id: 'a_${i + 1}',
+        name: _teamAPlayerCtrls[i].text.trim().isEmpty ? '${_battingTeamCtrl.text.trim()} Player ${i + 1}' : _teamAPlayerCtrls[i].text.trim(),
+      ),
+    );
+
+    List<PlayerModel> teamBPlayers = List.generate(
+      _teamBPlayerCtrls.length,
+      (i) => PlayerModel(
+        id: 'b_${i + 1}',
+        name: _teamBPlayerCtrls[i].text.trim().isEmpty ? '${_bowlingTeamCtrl.text.trim()} Player ${i + 1}' : _teamBPlayerCtrls[i].text.trim(),
+      ),
+    );
+
     final controller = Provider.of<MatchController>(context, listen: false);
     controller.setupMatch(
       teamA: _battingTeamCtrl.text.trim(),
@@ -46,6 +89,8 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
       dateTime: _currentDateTime,
       totalOvers: overs,
       playersPerTeam: players,
+      teamAPlayers: teamAPlayers,
+      teamBPlayers: teamBPlayers,
     );
 
     Navigator.push(
@@ -79,19 +124,25 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                 _buildSectionHeader('TEAM NAMES SETUP', Icons.shield),
                 const SizedBox(height: 12),
 
-                // Team A Input
                 TextFormField(
                   controller: _battingTeamCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Team A Name',
                     prefixIcon: Icon(Icons.shield, color: AppTheme.primaryEmerald),
                   ),
-                  validator: (val) =>
-                      (val == null || val.trim().isEmpty) ? 'Enter Team A name' : null,
+                  validator: (val) => (val == null || val.trim().isEmpty) ? 'Enter Team A name' : null,
+                  onChanged: (val) {
+                    setState(() {
+                      for (int i = 0; i < _teamAPlayerCtrls.length; i++) {
+                        if (_teamAPlayerCtrls[i].text.contains('Player')) {
+                          _teamAPlayerCtrls[i].text = '${val.trim()} Player ${i + 1}';
+                        }
+                      }
+                    });
+                  },
                 ),
                 const SizedBox(height: 14),
 
-                // Team B Input
                 TextFormField(
                   controller: _bowlingTeamCtrl,
                   decoration: const InputDecoration(
@@ -105,20 +156,27 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                     }
                     return null;
                   },
+                  onChanged: (val) {
+                    setState(() {
+                      for (int i = 0; i < _teamBPlayerCtrls.length; i++) {
+                        if (_teamBPlayerCtrls[i].text.contains('Player')) {
+                          _teamBPlayerCtrls[i].text = '${val.trim()} Player ${i + 1}';
+                        }
+                      }
+                    });
+                  },
                 ),
                 const SizedBox(height: 24),
 
                 _buildSectionHeader('MATCH CONFIGURATION', Icons.tune),
                 const SizedBox(height: 14),
 
-                // Select Overs Chips Header
                 const Text(
                   'Select Overs (1 - 50):',
                   style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textLight),
                 ),
                 const SizedBox(height: 10),
 
-                // Preset Chips + Custom Chip
                 Wrap(
                   spacing: 8,
                   runSpacing: 10,
@@ -170,7 +228,6 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Dedicated Customized Overs Section Card
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -221,10 +278,8 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      // Over Number Entry Row with Quick +/- Buttons
                       Row(
                         children: [
-                          // Decrement Button (-)
                           IconButton.filledTonal(
                             onPressed: () {
                               setState(() => _isCustomMode = true);
@@ -237,7 +292,6 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                           ),
                           const SizedBox(width: 8),
 
-                          // Text Input for Direct Typing Over Number
                           Expanded(
                             flex: 3,
                             child: TextFormField(
@@ -273,7 +327,6 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                           ),
                           const SizedBox(width: 8),
 
-                          // Increment Button (+)
                           IconButton.filledTonal(
                             onPressed: () {
                               setState(() => _isCustomMode = true);
@@ -286,7 +339,6 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                           ),
                           const SizedBox(width: 12),
 
-                          // Players Per Team Input
                           Expanded(
                             flex: 2,
                             child: TextFormField(
@@ -297,6 +349,14 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                                 labelText: 'Players/Team',
                                 contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                               ),
+                              onChanged: (val) {
+                                int? parsed = int.tryParse(val);
+                                if (parsed != null && parsed >= 2 && parsed <= 11) {
+                                  setState(() {
+                                    _initSquadControllers(parsed);
+                                  });
+                                }
+                              },
                               validator: (val) {
                                 int? parsed = int.tryParse(val ?? '');
                                 if (parsed == null || parsed < 2 || parsed > 11) {
@@ -311,9 +371,56 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // Player Rosters Accordions
+                _buildSectionHeader('SQUAD PLAYERS MANAGEMENT', Icons.group),
+                const SizedBox(height: 12),
+
+                ExpansionTile(
+                  title: Text(
+                    '${_battingTeamCtrl.text.trim()} Squad (${_teamAPlayerCtrls.length} Players)',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald),
+                  ),
+                  children: List.generate(_teamAPlayerCtrls.length, (i) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                      child: TextFormField(
+                        controller: _teamAPlayerCtrls[i],
+                        style: const TextStyle(fontSize: 14),
+                        decoration: InputDecoration(
+                          labelText: 'Batter ${i + 1}',
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+
+                ExpansionTile(
+                  title: Text(
+                    '${_bowlingTeamCtrl.text.trim()} Squad (${_teamBPlayerCtrls.length} Players)',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.coinGold),
+                  ),
+                  children: List.generate(_teamBPlayerCtrls.length, (i) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                      child: TextFormField(
+                        controller: _teamBPlayerCtrls[i],
+                        style: const TextStyle(fontSize: 14),
+                        decoration: InputDecoration(
+                          labelText: 'Player ${i + 1}',
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+
                 const SizedBox(height: 32),
 
-                // Proceed Button
                 SizedBox(
                   width: double.infinity,
                   height: 54,

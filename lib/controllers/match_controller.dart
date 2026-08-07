@@ -1,14 +1,17 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import '../models/match_model.dart';
 import '../models/toss_details.dart';
 import '../models/over_model.dart';
 import '../models/ball_model.dart';
+import '../models/player_model.dart';
 import '../services/toss_service.dart';
 import '../services/match_history_service.dart';
+import '../services/active_match_service.dart';
 
-class MatchController extends ChangeNotifier {
+class MatchController extends ChangeNotifier with WidgetsBindingObserver {
   final TossService _tossService = TossService();
   final MatchHistoryService _historyService = MatchHistoryService();
+  final ActiveMatchService _activeMatchService = ActiveMatchService();
 
   MatchModel? _currentMatch;
   List<MatchModel> _history = [];
@@ -25,15 +28,43 @@ class MatchController extends ChangeNotifier {
   String? get lastFlipResult => _lastFlipResult;
 
   MatchController() {
+    WidgetsBinding.instance.addObserver(this);
     loadHistory();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      _autoSaveActiveMatch();
+    }
   }
 
   Future<void> loadHistory() async {
     _isLoadingHistory = true;
     notifyListeners();
+
+    // 1. Check for active live match
+    MatchModel? activeMatch = await _activeMatchService.getActiveMatch();
+    if (activeMatch != null && !activeMatch.isCompleted && activeMatch.status != MatchStatus.abandoned) {
+      _currentMatch = activeMatch;
+    }
+
+    // 2. Load completed matches history
     _history = await _historyService.getMatchHistory();
     _isLoadingHistory = false;
     notifyListeners();
+  }
+
+  void _autoSaveActiveMatch() {
+    if (_currentMatch != null && !_currentMatch!.isCompleted && _currentMatch!.status != MatchStatus.abandoned) {
+      _activeMatchService.saveActiveMatch(_currentMatch!);
+    }
   }
 
   /// 1. Setup Screen Action
@@ -45,9 +76,14 @@ class MatchController extends ChangeNotifier {
     required DateTime dateTime,
     required int totalOvers,
     int playersPerTeam = 11,
+    List<PlayerModel>? teamAPlayers,
+    List<PlayerModel>? teamBPlayers,
   }) {
     String batTeam = teamA.trim().isEmpty ? 'Team A' : teamA.trim();
     String bowlTeam = teamB.trim().isEmpty ? 'Team B' : teamB.trim();
+
+    List<PlayerModel> aPlayers = teamAPlayers ?? List.generate(playersPerTeam, (i) => PlayerModel(id: 'a_${i + 1}', name: '$batTeam Player ${i + 1}'));
+    List<PlayerModel> bPlayers = teamBPlayers ?? List.generate(playersPerTeam, (i) => PlayerModel(id: 'b_${i + 1}', name: '$bowlTeam Player ${i + 1}'));
 
     _currentMatch = MatchModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -58,14 +94,21 @@ class MatchController extends ChangeNotifier {
       dateTime: dateTime,
       totalOvers: totalOvers <= 0 ? 20 : totalOvers,
       playersPerTeam: playersPerTeam,
+      status: MatchStatus.tossPending,
       battingTeam: batTeam,
       bowlingTeam: bowlTeam,
-      currentStriker: '$batTeam Opener 1',
-      currentNonStriker: '$batTeam Opener 2',
-      currentBowler: '$bowlTeam Bowler 1',
+      teamAPlayers: aPlayers,
+      teamBPlayers: bPlayers,
+      currentStriker: aPlayers.isNotEmpty ? aPlayers[0].name : '$batTeam Opener 1',
+      currentStrikerId: aPlayers.isNotEmpty ? aPlayers[0].id : 'a_1',
+      currentNonStriker: aPlayers.length > 1 ? aPlayers[1].name : '$batTeam Opener 2',
+      currentNonStrikerId: aPlayers.length > 1 ? aPlayers[1].id : 'a_2',
+      currentBowler: bPlayers.isNotEmpty ? bPlayers.last.name : '$bowlTeam Bowler 1',
+      currentBowlerId: bPlayers.isNotEmpty ? bPlayers.last.id : 'b_11',
     );
     _lastFlipResult = null;
     _isFlipping = false;
+    _autoSaveActiveMatch();
     notifyListeners();
   }
 
@@ -85,9 +128,9 @@ class MatchController extends ChangeNotifier {
   /// 3 & 4. Toss Winner & Decision Action
   void finalizeTossDecision({
     required String callingTeam,
-    required String tossCall, // "HEADS" or "TAILS"
+    required String tossCall,
     required String coinResult,
-    required String tossDecision, // "Bat First" or "Bowl First"
+    required String tossDecision,
   }) {
     if (_currentMatch == null) return;
 
@@ -103,12 +146,21 @@ class MatchController extends ChangeNotifier {
     );
 
     _currentMatch!.tossDetails = toss;
+    _currentMatch!.status = MatchStatus.live;
     _currentMatch!.battingTeam = toss.battingTeam;
     _currentMatch!.bowlingTeam = toss.bowlingTeam;
-    _currentMatch!.currentStriker = '${toss.battingTeam} Opener 1';
-    _currentMatch!.currentNonStriker = '${toss.battingTeam} Opener 2';
-    _currentMatch!.currentBowler = '${toss.bowlingTeam} Bowler 1';
 
+    List<PlayerModel> batSquad = _currentMatch!.currentBattingSquad;
+    List<PlayerModel> bowlSquad = _currentMatch!.currentBowlingSquad;
+
+    _currentMatch!.currentStriker = batSquad.isNotEmpty ? batSquad[0].name : '${toss.battingTeam} Opener 1';
+    _currentMatch!.currentStrikerId = batSquad.isNotEmpty ? batSquad[0].id : 'bat_1';
+    _currentMatch!.currentNonStriker = batSquad.length > 1 ? batSquad[1].name : '${toss.battingTeam} Opener 2';
+    _currentMatch!.currentNonStrikerId = batSquad.length > 1 ? batSquad[1].id : 'bat_2';
+    _currentMatch!.currentBowler = bowlSquad.isNotEmpty ? bowlSquad.last.name : '${toss.bowlingTeam} Bowler 1';
+    _currentMatch!.currentBowlerId = bowlSquad.isNotEmpty ? bowlSquad.last.id : 'bowl_1';
+
+    _autoSaveActiveMatch();
     notifyListeners();
   }
 
@@ -116,10 +168,13 @@ class MatchController extends ChangeNotifier {
   void recordBall({
     required int runs,
     bool isWicket = false,
-    String? extraType, // 'WD', 'NB', 'B', 'LB'
+    String? extraType,
+    String? dismissalType,
+    String? dismissedBatterId,
+    String? fielderName,
   }) {
     if (_currentMatch == null || _currentMatch!.isCompleted) return;
-    if (_currentMatch!.isOverCompleteWaiting) return; // Wait for user to start next over
+    if (_currentMatch!.isOverCompleteWaiting) return;
 
     MatchModel match = _currentMatch!;
     int maxWickets = match.playersPerTeam - 1;
@@ -149,7 +204,6 @@ class MatchController extends ChangeNotifier {
 
     String entry = _formatBallEntry(runs, isWicket, extraType);
 
-    // Update match cumulative totals
     if (match.currentInnings == 1) {
       match.inn1Runs += runsToAdd;
       if (isWicket) match.inn1Wickets += 1;
@@ -162,7 +216,8 @@ class MatchController extends ChangeNotifier {
       match.inn2BallHistory.add(entry);
     }
 
-    // Create Ball object and append to active over
+    String outBatterId = dismissedBatterId ?? match.currentStrikerId;
+
     BallModel ball = BallModel(
       overNumber: activeOver.overNumber,
       ballInOver: ballNumInOver,
@@ -173,31 +228,34 @@ class MatchController extends ChangeNotifier {
       isWicket: isWicket,
       extraType: extraType,
       striker: match.currentStriker,
+      strikerId: match.currentStrikerId,
       nonStriker: match.currentNonStriker,
+      nonStrikerId: match.currentNonStrikerId,
       bowler: match.currentBowler,
+      bowlerId: match.currentBowlerId,
       teamScoreSnapshot: '${match.currentRuns}/${match.currentWickets}',
+      dismissalType: isWicket ? (dismissalType ?? 'Bowled') : null,
+      dismissedBatterId: isWicket ? outBatterId : null,
+      fielderName: fielderName,
     );
     activeOver.balls.add(ball);
 
-    // Rotate strike on odd runs (if runs scored off bat/extras)
+    // Strike Rotation
     if (runs % 2 != 0) {
       _swapStriker();
     }
 
-    // Check if over is completed (6 legal deliveries)
     if (activeOver.isComplete) {
-      _swapStriker(); // Automatic strike rotation at over end
+      _swapStriker();
       match.isOverCompleteWaiting = true;
     }
 
-    // Free Hit state management
     if (extraType == 'NB') {
       match.isFreeHit = true;
     } else if (isLegalBall) {
       match.isFreeHit = false;
     }
 
-    // Check match / innings completion
     if (match.currentInnings == 1) {
       if (match.inn1Wickets >= maxWickets || match.inn1Balls >= maxBalls) {
         match.isOverCompleteWaiting = false;
@@ -224,50 +282,199 @@ class MatchController extends ChangeNotifier {
       }
     }
 
+    _autoSaveActiveMatch();
     notifyListeners();
   }
 
   void _swapStriker() {
     if (_currentMatch == null) return;
-    String temp = _currentMatch!.currentStriker;
+    String tempName = _currentMatch!.currentStriker;
+    String tempId = _currentMatch!.currentStrikerId;
+
     _currentMatch!.currentStriker = _currentMatch!.currentNonStriker;
-    _currentMatch!.currentNonStriker = temp;
+    _currentMatch!.currentStrikerId = _currentMatch!.currentNonStrikerId;
+
+    _currentMatch!.currentNonStriker = tempName;
+    _currentMatch!.currentNonStrikerId = tempId;
   }
 
-  void startNextOver({String? nextBowler}) {
+  void startNextOver({PlayerModel? nextBowler}) {
     if (_currentMatch == null) return;
     _currentMatch!.isOverCompleteWaiting = false;
-    if (nextBowler != null && nextBowler.trim().isNotEmpty) {
-      _currentMatch!.currentBowler = nextBowler.trim();
+    if (nextBowler != null) {
+      _currentMatch!.currentBowler = nextBowler.name;
+      _currentMatch!.currentBowlerId = nextBowler.id;
+    }
+    _autoSaveActiveMatch();
+    notifyListeners();
+  }
+
+  void updatePlayerName(String playerId, String newName) {
+    if (_currentMatch == null || newName.trim().isEmpty) return;
+    String name = newName.trim();
+
+    for (var p in _currentMatch!.teamAPlayers) {
+      if (p.id == playerId) p.name = name;
+    }
+    for (var p in _currentMatch!.teamBPlayers) {
+      if (p.id == playerId) p.name = name;
+    }
+
+    if (_currentMatch!.currentStrikerId == playerId) _currentMatch!.currentStriker = name;
+    if (_currentMatch!.currentNonStrikerId == playerId) _currentMatch!.currentNonStriker = name;
+    if (_currentMatch!.currentBowlerId == playerId) _currentMatch!.currentBowler = name;
+
+    _autoSaveActiveMatch();
+    if (_currentMatch!.isCompleted) {
+      _historyService.saveMatch(_currentMatch!);
     }
     notifyListeners();
   }
 
+  void replaceBatter({required String dismissedBatterId, required PlayerModel incomingBatter}) {
+    if (_currentMatch == null) return;
+    if (_currentMatch!.currentStrikerId == dismissedBatterId) {
+      _currentMatch!.currentStriker = incomingBatter.name;
+      _currentMatch!.currentStrikerId = incomingBatter.id;
+    } else if (_currentMatch!.currentNonStrikerId == dismissedBatterId) {
+      _currentMatch!.currentNonStriker = incomingBatter.name;
+      _currentMatch!.currentNonStrikerId = incomingBatter.id;
+    }
+    _autoSaveActiveMatch();
+    notifyListeners();
+  }
+
+  void setBowler(PlayerModel bowler) {
+    if (_currentMatch == null) return;
+    _currentMatch!.currentBowler = bowler.name;
+    _currentMatch!.currentBowlerId = bowler.id;
+    _autoSaveActiveMatch();
+    notifyListeners();
+  }
+
+  /// Edit Past Ball & Recalculate Statistics
+  void editBall({
+    required int innings,
+    required int overIndex,
+    required int ballIndex,
+    required int runs,
+    bool isWicket = false,
+    String? extraType,
+    String? dismissalType,
+    String? dismissedBatterId,
+    String? fielderName,
+  }) {
+    if (_currentMatch == null || !_currentMatch!.isEditable) return;
+    MatchModel match = _currentMatch!;
+
+    List<OverModel> overs = (innings == 1) ? match.inn1Overs : match.inn2Overs;
+    if (overIndex < 0 || overIndex >= overs.length) return;
+
+    OverModel over = overs[overIndex];
+    if (ballIndex < 0 || ballIndex >= over.balls.length) return;
+
+    BallModel oldBall = over.balls[ballIndex];
+    bool isLegalBall = (extraType != 'WD' && extraType != 'NB');
+    int runsToAdd = runs;
+    if (extraType == 'WD' || extraType == 'NB') runsToAdd += 1;
+
+    String entry = _formatBallEntry(runs, isWicket, extraType);
+
+    BallModel updatedBall = BallModel(
+      overNumber: oldBall.overNumber,
+      ballInOver: oldBall.ballInOver,
+      ballNumberFormatted: oldBall.ballNumberFormatted,
+      runs: runsToAdd,
+      displayResult: entry,
+      isLegal: isLegalBall,
+      isWicket: isWicket,
+      extraType: extraType,
+      striker: oldBall.striker,
+      strikerId: oldBall.strikerId,
+      nonStriker: oldBall.nonStriker,
+      nonStrikerId: oldBall.nonStrikerId,
+      bowler: oldBall.bowler,
+      bowlerId: oldBall.bowlerId,
+      teamScoreSnapshot: oldBall.teamScoreSnapshot,
+      dismissalType: isWicket ? (dismissalType ?? 'Bowled') : null,
+      dismissedBatterId: isWicket ? (dismissedBatterId ?? oldBall.strikerId) : null,
+      fielderName: fielderName,
+    );
+
+    over.balls[ballIndex] = updatedBall;
+
+    // Recalculate complete innings totals
+    _recalculateInningsTotals(match, innings);
+
+    if (match.isCompleted) {
+      _historyService.saveMatch(match);
+    } else {
+      _autoSaveActiveMatch();
+    }
+    notifyListeners();
+  }
+
+  void _recalculateInningsTotals(MatchModel match, int innings) {
+    List<OverModel> overs = (innings == 1) ? match.inn1Overs : match.inn2Overs;
+
+    int totalRuns = 0;
+    int totalWickets = 0;
+    int totalLegalBalls = 0;
+    List<String> ballHistory = [];
+
+    for (var o in overs) {
+      for (var b in o.balls) {
+        totalRuns += b.runs;
+        if (b.isWicket) totalWickets += 1;
+        if (b.isLegal) totalLegalBalls += 1;
+        ballHistory.add(b.displayResult);
+      }
+    }
+
+    if (innings == 1) {
+      match.inn1Runs = totalRuns;
+      match.inn1Wickets = totalWickets;
+      match.inn1Balls = totalLegalBalls;
+      match.inn1BallHistory = ballHistory;
+    } else {
+      match.inn2Runs = totalRuns;
+      match.inn2Wickets = totalWickets;
+      match.inn2Balls = totalLegalBalls;
+      match.inn2BallHistory = ballHistory;
+    }
+  }
+
   String _formatBallEntry(int runs, bool isWicket, String? extraType) {
     if (isWicket) return 'W';
-    if (extraType == 'WD') {
-      return runs > 0 ? '${runs + 1}WD' : 'WD';
-    }
-    if (extraType == 'NB') {
-      return runs > 0 ? '${runs + 1}NB' : 'NB';
-    }
-    if (extraType == 'B' || extraType == 'LB') {
-      return '$runs$extraType';
-    }
+    if (extraType == 'WD') return runs > 0 ? '${runs + 1}WD' : 'WD';
+    if (extraType == 'NB') return runs > 0 ? '${runs + 1}NB' : 'NB';
+    if (extraType == 'B' || extraType == 'LB') return '$runs$extraType';
     return runs.toString();
   }
 
   void startSecondInnings() {
     if (_currentMatch == null) return;
-    _currentMatch!.currentInnings = 2;
-    _currentMatch!.isFreeHit = false;
-    _currentMatch!.isOverCompleteWaiting = false;
-    String temp = _currentMatch!.battingTeam;
-    _currentMatch!.battingTeam = _currentMatch!.bowlingTeam;
-    _currentMatch!.bowlingTeam = temp;
-    _currentMatch!.currentStriker = '${_currentMatch!.battingTeam} Opener 1';
-    _currentMatch!.currentNonStriker = '${_currentMatch!.battingTeam} Opener 2';
-    _currentMatch!.currentBowler = '${_currentMatch!.bowlingTeam} Bowler 1';
+    MatchModel match = _currentMatch!;
+    match.currentInnings = 2;
+    match.status = MatchStatus.inningsBreak;
+    match.isFreeHit = false;
+    match.isOverCompleteWaiting = false;
+
+    String tempTeam = match.battingTeam;
+    match.battingTeam = match.bowlingTeam;
+    match.bowlingTeam = tempTeam;
+
+    List<PlayerModel> batSquad = match.currentBattingSquad;
+    List<PlayerModel> bowlSquad = match.currentBowlingSquad;
+
+    match.currentStriker = batSquad.isNotEmpty ? batSquad[0].name : '${match.battingTeam} Opener 1';
+    match.currentStrikerId = batSquad.isNotEmpty ? batSquad[0].id : 'b_1';
+    match.currentNonStriker = batSquad.length > 1 ? batSquad[1].name : '${match.battingTeam} Opener 2';
+    match.currentNonStrikerId = batSquad.length > 1 ? batSquad[1].id : 'b_2';
+    match.currentBowler = bowlSquad.isNotEmpty ? bowlSquad.last.name : '${match.bowlingTeam} Bowler 1';
+    match.currentBowlerId = bowlSquad.isNotEmpty ? bowlSquad.last.id : 'a_11';
+
+    _autoSaveActiveMatch();
     notifyListeners();
   }
 
@@ -296,19 +503,32 @@ class MatchController extends ChangeNotifier {
 
   void _completeMatch({required String winner, required String margin}) {
     if (_currentMatch == null) return;
-    _currentMatch!.isCompleted = true;
-    _currentMatch!.winnerTeam = winner;
-    _currentMatch!.winMargin = margin;
+    MatchModel match = _currentMatch!;
+    match.isCompleted = true;
+    match.status = MatchStatus.completed;
+    match.winnerTeam = winner;
+    match.winMargin = margin;
 
-    _historyService.saveMatch(_currentMatch!);
+    DateTime now = DateTime.now();
+    match.matchCompletedAt = now;
+    match.editExpiresAt = now.add(const Duration(hours: 2));
+
+    _historyService.saveMatch(match);
+    _activeMatchService.clearActiveMatch();
     loadHistory();
   }
 
+  void abandonCurrentMatch() {
+    if (_currentMatch == null) return;
+    _currentMatch!.status = MatchStatus.abandoned;
+    _activeMatchService.clearActiveMatch();
+    resetCurrentMatch();
+  }
+
   void undoLastBall() {
-    if (_currentMatch == null || _currentMatch!.isCompleted) return;
+    if (_currentMatch == null || !_currentMatch!.isEditable) return;
     MatchModel match = _currentMatch!;
 
-    // If over complete waiting was active, clear it first
     if (match.isOverCompleteWaiting) {
       match.isOverCompleteWaiting = false;
     }
@@ -318,8 +538,7 @@ class MatchController extends ChangeNotifier {
 
     if (history.isEmpty && overs.isEmpty) return;
 
-    // Remove last ball entry
-    String lastEntry = history.isNotEmpty ? history.removeLast() : '';
+    if (history.isNotEmpty) history.removeLast();
 
     BallModel? lastBall;
     if (overs.isNotEmpty && overs.last.balls.isNotEmpty) {
@@ -329,7 +548,6 @@ class MatchController extends ChangeNotifier {
       }
     }
 
-    // Revert match totals
     if (lastBall != null) {
       if (match.currentInnings == 1) {
         match.inn1Runs = (match.inn1Runs - lastBall.runs).clamp(0, 9999);
@@ -340,49 +558,21 @@ class MatchController extends ChangeNotifier {
         if (lastBall.isWicket) match.inn2Wickets = (match.inn2Wickets - 1).clamp(0, 99);
         if (lastBall.isLegal) match.inn2Balls = (match.inn2Balls - 1).clamp(0, 999);
       }
-      // Revert striker/non-striker
       match.currentStriker = lastBall.striker;
+      match.currentStrikerId = lastBall.strikerId;
       match.currentNonStriker = lastBall.nonStriker;
+      match.currentNonStrikerId = lastBall.nonStrikerId;
       match.currentBowler = lastBall.bowler;
-    } else if (lastEntry.isNotEmpty) {
-      // Fallback for simple string history
-      if (lastEntry == 'W') {
-        if (match.currentInnings == 1) {
-          match.inn1Wickets = (match.inn1Wickets - 1).clamp(0, 99);
-          match.inn1Balls = (match.inn1Balls - 1).clamp(0, 999);
-        } else {
-          match.inn2Wickets = (match.inn2Wickets - 1).clamp(0, 99);
-          match.inn2Balls = (match.inn2Balls - 1).clamp(0, 999);
-        }
-      } else if (lastEntry.contains('WD') || lastEntry.contains('NB')) {
-        int extraRuns = 1;
-        if (lastEntry.length > 2) {
-          extraRuns += int.tryParse(lastEntry.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-        }
-        if (match.currentInnings == 1) {
-          match.inn1Runs = (match.inn1Runs - extraRuns).clamp(0, 9999);
-        } else {
-          match.inn2Runs = (match.inn2Runs - extraRuns).clamp(0, 9999);
-        }
-      } else {
-        int runs = int.tryParse(lastEntry.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-        if (match.currentInnings == 1) {
-          match.inn1Runs = (match.inn1Runs - runs).clamp(0, 9999);
-          match.inn1Balls = (match.inn1Balls - 1).clamp(0, 999);
-        } else {
-          match.inn2Runs = (match.inn2Runs - runs).clamp(0, 9999);
-          match.inn2Balls = (match.inn2Balls - 1).clamp(0, 999);
-        }
-      }
+      match.currentBowlerId = lastBall.bowlerId;
     }
 
-    // Re-evaluate Free Hit status after undo
     if (history.isNotEmpty && history.last.contains('NB')) {
       match.isFreeHit = true;
     } else {
       match.isFreeHit = false;
     }
 
+    _autoSaveActiveMatch();
     notifyListeners();
   }
 
@@ -403,4 +593,3 @@ class MatchController extends ChangeNotifier {
     notifyListeners();
   }
 }
-
