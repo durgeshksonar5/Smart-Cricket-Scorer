@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cricket/models/match_model.dart';
 import 'package:cricket/controllers/match_controller.dart';
 
 void main() {
@@ -147,6 +148,39 @@ void main() {
       // Over complete should swap striker and set previousBowlerId
       expect(controller.currentMatch!.previousBowlerId, equals(bowlSquad[0].id));
       expect(controller.currentMatch!.currentStrikerId, equals(s1));
+    });
+
+    test('Match history preserves completed match and correctly sets 2 hour edit expiry window', () async {
+      controller.setupMatch(
+        teamA: 'India',
+        teamB: 'Australia',
+        dateTime: DateTime.now(),
+        totalOvers: 1,
+        playersPerTeam: 2, // 1 wicket = all out
+      );
+      controller.finalizeTossDecision(
+        callingTeam: 'India',
+        tossCall: 'HEADS',
+        coinResult: 'HEADS',
+        tossDecision: 'Bat First',
+      );
+
+      // Innings 1: 1 ball wicket -> triggers 2nd innings
+      controller.recordBall(runs: 0, isWicket: true);
+      expect(controller.currentMatch!.currentInnings, equals(2));
+
+      // Innings 2: 1 ball wicket -> match completes
+      controller.recordBall(runs: 0, isWicket: true);
+      expect(controller.currentMatch!.isCompleted, isTrue);
+      expect(controller.currentMatch!.status, equals(MatchStatus.completed));
+      expect(controller.currentMatch!.editExpiresAt, isNotNull);
+
+      // Verify editable within 2 hours
+      expect(controller.currentMatch!.isEditable, isTrue);
+
+      // Simulate expired match
+      controller.currentMatch!.editExpiresAt = DateTime.now().subtract(const Duration(minutes: 1));
+      expect(controller.currentMatch!.isEditable, isFalse);
     });
   });
 }

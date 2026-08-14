@@ -4,18 +4,24 @@ import '../models/toss_details.dart';
 import '../models/over_model.dart';
 import '../models/ball_model.dart';
 import '../models/player_model.dart';
+import '../models/team_model.dart';
 import '../services/toss_service.dart';
 import '../services/match_history_service.dart';
 import '../services/active_match_service.dart';
+import '../services/team_service.dart';
 
 class MatchController extends ChangeNotifier with WidgetsBindingObserver {
   final TossService _tossService = TossService();
   final MatchHistoryService _historyService = MatchHistoryService();
   final ActiveMatchService _activeMatchService = ActiveMatchService();
+  final TeamService _teamService = TeamService();
 
   MatchModel? _currentMatch;
   List<MatchModel> _history = [];
   bool _isLoadingHistory = false;
+
+  List<TeamModel> _savedTeams = [];
+  Map<String, dynamic>? _lastUsedTeams;
 
   // Toss flip UI state
   bool _isFlipping = false;
@@ -24,12 +30,15 @@ class MatchController extends ChangeNotifier with WidgetsBindingObserver {
   MatchModel? get currentMatch => _currentMatch;
   List<MatchModel> get history => _history;
   bool get isLoadingHistory => _isLoadingHistory;
+  List<TeamModel> get savedTeams => _savedTeams;
+  Map<String, dynamic>? get lastUsedTeams => _lastUsedTeams;
   bool get isFlipping => _isFlipping;
   String? get lastFlipResult => _lastFlipResult;
 
   MatchController() {
     WidgetsBinding.instance.addObserver(this);
     loadHistory();
+    loadSavedTeams();
   }
 
   @override
@@ -59,6 +68,22 @@ class MatchController extends ChangeNotifier with WidgetsBindingObserver {
     _history = await _historyService.getMatchHistory();
     _isLoadingHistory = false;
     notifyListeners();
+  }
+
+  Future<void> loadSavedTeams() async {
+    _savedTeams = await _teamService.getSavedTeams();
+    _lastUsedTeams = await _teamService.getLastUsedTeams();
+    notifyListeners();
+  }
+
+  Future<void> saveTeam(TeamModel team) async {
+    await _teamService.saveTeam(team);
+    await loadSavedTeams();
+  }
+
+  Future<void> deleteTeam(String teamId) async {
+    await _teamService.deleteTeam(teamId);
+    await loadSavedTeams();
   }
 
   void _autoSaveActiveMatch() {
@@ -109,7 +134,83 @@ class MatchController extends ChangeNotifier with WidgetsBindingObserver {
     _lastFlipResult = null;
     _isFlipping = false;
     _autoSaveActiveMatch();
+
+    // Persist last used teams & ensure roster persistence
+    _teamService.saveLastUsedTeams(
+      teamA: batTeam,
+      teamAPlayers: aPlayers,
+      teamB: bowlTeam,
+      teamBPlayers: bPlayers,
+      totalOvers: totalOvers <= 0 ? 20 : totalOvers,
+      playersPerTeam: playersPerTeam,
+    ).then((_) => loadSavedTeams());
+
     notifyListeners();
+  }
+
+  /// Quick Rematch directly from previous match model with 100% fresh statistics
+  void startRematch(MatchModel match) {
+    // Clone player rosters with fresh clean instances (preserving names and roles)
+    List<PlayerModel> freshTeamAPlayers = match.teamAPlayers.map((p) => PlayerModel(
+      id: 'a_${p.id}_${DateTime.now().millisecondsSinceEpoch % 10000}',
+      name: p.name,
+      isCaptain: p.isCaptain,
+      isWicketKeeper: p.isWicketKeeper,
+    )).toList();
+
+    List<PlayerModel> freshTeamBPlayers = match.teamBPlayers.map((p) => PlayerModel(
+      id: 'b_${p.id}_${DateTime.now().millisecondsSinceEpoch % 10000}',
+      name: p.name,
+      isCaptain: p.isCaptain,
+      isWicketKeeper: p.isWicketKeeper,
+    )).toList();
+
+    _currentMatch = MatchModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      teamA: match.teamA,
+      teamB: match.teamB,
+      matchName: match.matchName,
+      venue: match.venue,
+      dateTime: DateTime.now(),
+      totalOvers: match.totalOvers,
+      playersPerTeam: match.playersPerTeam,
+      status: MatchStatus.tossPending,
+      battingTeam: match.teamA,
+      bowlingTeam: match.teamB,
+      teamAPlayers: freshTeamAPlayers,
+      teamBPlayers: freshTeamBPlayers,
+      currentStriker: freshTeamAPlayers.isNotEmpty ? freshTeamAPlayers[0].name : '${match.teamA} Opener 1',
+      currentStrikerId: freshTeamAPlayers.isNotEmpty ? freshTeamAPlayers[0].id : 'a_1',
+      currentNonStriker: freshTeamAPlayers.length > 1 ? freshTeamAPlayers[1].name : '${match.teamA} Opener 2',
+      currentNonStrikerId: freshTeamAPlayers.length > 1 ? freshTeamAPlayers[1].id : 'a_2',
+      currentBowler: freshTeamBPlayers.isNotEmpty ? freshTeamBPlayers.last.name : '${match.teamB} Bowler 1',
+      currentBowlerId: freshTeamBPlayers.isNotEmpty ? freshTeamBPlayers.last.id : 'b_11',
+    );
+    _lastFlipResult = null;
+    _isFlipping = false;
+    _autoSaveActiveMatch();
+    notifyListeners();
+  }
+
+  /// Start match using persistent Saved Team models
+  void startMatchWithSavedTeams({
+    required TeamModel teamA,
+    required TeamModel teamB,
+    int totalOvers = 20,
+    int playersPerTeam = 11,
+  }) {
+    List<PlayerModel> teamAPlayers = teamA.clonePlayersForMatch('a');
+    List<PlayerModel> teamBPlayers = teamB.clonePlayersForMatch('b');
+
+    setupMatch(
+      teamA: teamA.name,
+      teamB: teamB.name,
+      dateTime: DateTime.now(),
+      totalOvers: totalOvers,
+      playersPerTeam: playersPerTeam,
+      teamAPlayers: teamAPlayers,
+      teamBPlayers: teamBPlayers,
+    );
   }
 
   /// 2. Coin Toss Action

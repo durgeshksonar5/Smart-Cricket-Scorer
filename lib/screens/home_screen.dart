@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../controllers/match_controller.dart';
 import '../models/match_model.dart';
+import '../models/player_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/made_by_footer.dart';
 import '../widgets/app_logo.dart';
@@ -11,6 +12,8 @@ import 'team_setup_screen.dart';
 import 'coin_toss_screen.dart';
 import 'scorecard_screen.dart';
 import 'match_detail_screen.dart';
+import 'my_teams_screen.dart';
+import 'reuse_teams_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +24,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _selectedFilter = 'ALL';
+  String _searchQuery = '';
+  final TextEditingController _searchCtrl = TextEditingController();
+  bool _isSearchVisible = false;
   Timer? _countdownTimer;
 
   @override
@@ -34,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -56,11 +63,30 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     list.addAll(allMatches);
 
+    // Apply Filter Chips
     if (_selectedFilter == 'LIVE') {
-      return list.where((m) => !m.isCompleted).toList();
+      list = list.where((m) => !m.isCompleted).toList();
     } else if (_selectedFilter == 'COMPLETED') {
-      return list.where((m) => m.isCompleted).toList();
+      list = list.where((m) => m.isCompleted).toList();
+    } else if (_selectedFilter == 'EDITABLE') {
+      list = list.where((m) => m.isCompleted && m.isEditable).toList();
+    } else if (_selectedFilter == 'LOCKED') {
+      list = list.where((m) => m.isCompleted && !m.isEditable).toList();
     }
+
+    // Apply Search Query
+    if (_searchQuery.trim().isNotEmpty) {
+      String q = _searchQuery.trim().toLowerCase();
+      list = list.where((m) {
+        bool teamMatch = m.teamA.toLowerCase().contains(q) || m.teamB.toLowerCase().contains(q);
+        bool venueMatch = m.venue.toLowerCase().contains(q);
+        bool dateMatch = DateFormat('dd MMM yyyy').format(m.dateTime).toLowerCase().contains(q);
+        bool playerMatch = m.teamAPlayers.any((p) => p.name.toLowerCase().contains(q)) ||
+            m.teamBPlayers.any((p) => p.name.toLowerCase().contains(q));
+        return teamMatch || venueMatch || dateMatch || playerMatch;
+      }).toList();
+    }
+
     return list;
   }
 
@@ -71,10 +97,38 @@ class _HomeScreenState extends State<HomeScreen> {
     bool hasActiveLiveMatch = (activeMatch != null && !activeMatch.isCompleted && activeMatch.status != MatchStatus.abandoned);
 
     List<MatchModel> filteredMatches = _filterMatches(controller.history, activeMatch);
+    MatchModel? latestCompletedMatch = controller.history.where((m) => m.isCompleted).isNotEmpty
+        ? controller.history.firstWhere((m) => m.isCompleted)
+        : null;
 
     return Scaffold(
       appBar: AppBar(
         title: const AppLogo(size: 28, showText: true),
+        actions: [
+          IconButton(
+            icon: Icon(_isSearchVisible ? Icons.search_off : Icons.search, color: AppTheme.primaryEmerald),
+            tooltip: 'Search Matches',
+            onPressed: () {
+              setState(() {
+                _isSearchVisible = !_isSearchVisible;
+                if (!_isSearchVisible) {
+                  _searchCtrl.clear();
+                  _searchQuery = '';
+                }
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.people_alt_outlined, color: AppTheme.primaryEmerald),
+            tooltip: 'My Teams',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MyTeamsScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -89,17 +143,52 @@ class _HomeScreenState extends State<HomeScreen> {
               ] else ...[
                 // Hero Banner Card for Start New Match
                 _buildStartNewMatchHeroCard(context, controller),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
+
+                // Quick Start / Reuse Last Match Card (if recent match available)
+                if (latestCompletedMatch != null || controller.lastUsedTeams != null) ...[
+                  _buildQuickStartReuseCard(context, controller, latestCompletedMatch),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  const SizedBox(height: 8),
+                ],
               ],
 
-              // 2. MATCH HISTORY FILTERS HEADER & CHIPS
+              // 2. SEARCH BAR (IF TOGGLED)
+              if (_isSearchVisible) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Search by team, player, venue, or date...',
+                      prefixIcon: const Icon(Icons.search, color: AppTheme.primaryEmerald, size: 20),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    ),
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                  ),
+                ),
+              ],
+
+              // 3. MATCH HISTORY FILTERS HEADER & CHIPS
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'MATCH HISTORY',
+                    'PERMANENT MATCH HISTORY',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryEmerald,
                       letterSpacing: 1.2,
@@ -116,14 +205,14 @@ class _HomeScreenState extends State<HomeScreen> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: ['ALL', 'LIVE', 'COMPLETED'].map((filter) {
+                  children: ['ALL', 'LIVE', 'COMPLETED', 'EDITABLE', 'LOCKED'].map((filter) {
                     bool isSel = _selectedFilter == filter;
                     return Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: ChoiceChip(
                         label: Text(filter, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isSel ? Colors.black : Colors.white)),
                         selected: isSel,
-                        selectedColor: AppTheme.primaryEmerald,
+                        selectedColor: filter == 'LOCKED' ? Colors.grey.shade700 : AppTheme.primaryEmerald,
                         backgroundColor: AppTheme.cardBgLight,
                         onSelected: (val) {
                           if (val) setState(() => _selectedFilter = filter);
@@ -135,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 12),
 
-              // 3. MATCH HISTORY LIST
+              // 4. MATCH HISTORY LIST
               Expanded(
                 child: controller.isLoadingHistory
                     ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryEmerald))
@@ -258,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildStartNewMatchHeroCard(BuildContext context, MatchController controller) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF132620), Color(0xFF1F4035)],
@@ -273,29 +362,111 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              const AppLogo(size: 42, showText: false),
+              const AppLogo(size: 38, showText: false),
               const SizedBox(width: 12),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Ready for a Match?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
-                  Text('Fair coin toss & official scorecard', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                ],
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Ready for a Match?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Colors.white)),
+                    Text('Fair coin toss & official scorecard', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
-            height: 48,
+            height: 46,
             child: ElevatedButton.icon(
               onPressed: () {
                 controller.resetCurrentMatch();
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamSetupScreen()));
               },
-              icon: const Icon(Icons.play_arrow, color: Colors.black, size: 24),
-              label: const Text('START NEW MATCH', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+              icon: const Icon(Icons.add, color: Colors.black, size: 22),
+              label: const Text('START NEW MATCH', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickStartReuseCard(BuildContext context, MatchController controller, MatchModel? latestMatch) {
+    String teamA = latestMatch?.teamA ?? (controller.lastUsedTeams?['teamA'] ?? 'India');
+    String teamB = latestMatch?.teamB ?? (controller.lastUsedTeams?['teamB'] ?? 'Australia');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primaryEmerald.withValues(alpha: 0.5), width: 1.2),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryEmerald.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.sync, color: AppTheme.primaryEmerald, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'QUICK START',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.coinGold, letterSpacing: 1.1),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$teamA vs $teamB',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () {
+              if (latestMatch != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ReuseTeamsScreen(sourceMatch: latestMatch)),
+                );
+              } else if (controller.lastUsedTeams != null) {
+                var d = controller.lastUsedTeams!;
+                List<PlayerModel> pA = (d['teamAPlayers'] as List<dynamic>?)?.map((p) => PlayerModel.fromJson(p)).toList() ?? [];
+                List<PlayerModel> pB = (d['teamBPlayers'] as List<dynamic>?)?.map((p) => PlayerModel.fromJson(p)).toList() ?? [];
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReuseTeamsScreen(
+                      teamAName: d['teamA'],
+                      teamBName: d['teamB'],
+                      teamAPlayers: pA,
+                      teamBPlayers: pB,
+                      totalOvers: d['totalOvers'] ?? 20,
+                      playersPerTeam: d['playersPerTeam'] ?? 11,
+                    ),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryEmerald,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: const Size(60, 36),
+            ),
+            child: const Text('REUSE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
           ),
         ],
       ),
@@ -307,94 +478,194 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isEditable = match.isEditable;
     Duration timeRem = match.editTimeRemaining;
 
+    String inn1Team = match.tossDetails?.tossDecision == "Bowl First" ? match.teamB : match.teamA;
+    String inn2Team = inn1Team == match.teamA ? match.teamB : match.teamA;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () {
-          controller.selectHistoricalMatch(match);
-          if (!match.isCompleted) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const ScorecardScreen()));
-          } else {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => MatchDetailScreen(match: match)));
-          }
-        },
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppTheme.cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isEditable ? AppTheme.primaryEmerald.withValues(alpha: 0.6) : const Color(0xFF2E5749)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text('${match.teamA} vs ${match.teamB}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis),
-                  ),
-                  Text(dateStr, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                ],
-              ),
-              const SizedBox(height: 6),
-
-              // Scores summary
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text('1st: ${match.inn1Runs}/${match.inn1Wickets} (${MatchModel.formatOvers(match.inn1Balls)} ov)', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), overflow: TextOverflow.ellipsis),
-                  ),
-                  Expanded(
-                    child: Text('2nd: ${match.inn2Runs}/${match.inn2Wickets} (${MatchModel.formatOvers(match.inn2Balls)} ov)', style: const TextStyle(fontSize: 12, color: AppTheme.textMuted), textAlign: TextAlign.end, overflow: TextOverflow.ellipsis),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Editing Status / Timer Badge
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (match.isCompleted) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: isEditable ? AppTheme.coinGold.withValues(alpha: 0.15) : AppTheme.cardBgLight,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: isEditable ? AppTheme.coinGold : Colors.grey),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(isEditable ? Icons.timer : Icons.lock, size: 12, color: isEditable ? AppTheme.coinGold : AppTheme.textMuted),
-                          const SizedBox(width: 4),
-                          Text(
-                            isEditable ? 'Editing Available: ${_formatDuration(timeRem)}' : '🔒 Editing Locked',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isEditable ? AppTheme.coinGold : AppTheme.textMuted),
-                          ),
-                        ],
-                      ),
+        border: Border.all(
+          color: isEditable
+              ? AppTheme.primaryEmerald.withValues(alpha: 0.6)
+              : const Color(0xFF2E5749),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row: Teams & Date
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      controller.selectHistoricalMatch(match);
+                      if (!match.isCompleted) {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ScorecardScreen()));
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => MatchDetailScreen(match: match)));
+                      }
+                    },
+                    child: Text(
+                      '${match.teamA} vs ${match.teamB}',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ] else ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: AppTheme.dangerRed.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                      child: const Text('🔴 Live Match', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.dangerRed)),
+                  ),
+                ),
+                Text(dateStr, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Scores Summary Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$inn1Team: ${match.inn1Runs}/${match.inn1Wickets}',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      Text(
+                        '(${MatchModel.formatOvers(match.inn1Balls)} / ${match.totalOvers}.0 ov)',
+                        style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                const Text('vs', style: TextStyle(fontSize: 12, color: AppTheme.coinGold, fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '$inn2Team: ${match.inn2Runs}/${match.inn2Wickets}',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      Text(
+                        '(${MatchModel.formatOvers(match.inn2Balls)} / ${match.totalOvers}.0 ov)',
+                        style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Result / Margin Banner
+            if (match.winnerTeam != null && match.winnerTeam!.isNotEmpty) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryEmerald.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.primaryEmerald.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  '🏆 ${match.winnerTeam} ${match.winMargin != null && match.winMargin!.isNotEmpty ? "won by ${match.winMargin}" : ""}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+
+            // Status Badge & Action Buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Status Badge
+                if (match.isCompleted) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: isEditable ? AppTheme.coinGold.withValues(alpha: 0.15) : AppTheme.cardBgLight,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: isEditable ? AppTheme.coinGold : Colors.grey),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(isEditable ? Icons.timer : Icons.lock, size: 12, color: isEditable ? AppTheme.coinGold : AppTheme.textMuted),
+                        const SizedBox(width: 4),
+                        Text(
+                          isEditable ? 'Editable (${_formatDuration(timeRem)})' : '🔒 Permanent',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isEditable ? AppTheme.coinGold : AppTheme.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: AppTheme.dangerRed.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                    child: const Text('🔴 Live Match', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.dangerRed)),
+                  ),
+                ],
+
+                // Action Buttons
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // VIEW SCORECARD BUTTON
+                    OutlinedButton(
+                      onPressed: () {
+                        controller.selectHistoricalMatch(match);
+                        if (!match.isCompleted) {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const ScorecardScreen()));
+                        } else {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => MatchDetailScreen(match: match, initialTabIndex: 1)));
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        side: const BorderSide(color: AppTheme.primaryEmerald),
+                        minimumSize: const Size(50, 30),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('VIEW', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryEmerald)),
+                    ),
+                    const SizedBox(width: 6),
+
+                    // REMATCH BUTTON (For completed matches)
+                    if (match.isCompleted) ...[
+                      ElevatedButton.icon(
+                        onPressed: () => _confirmRematch(context, controller, match),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryEmerald,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: const Size(60, 30),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon: const Icon(Icons.sync, size: 13, color: Colors.black),
+                        label: const Text('REMATCH', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+
+                    // Delete Button
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                      icon: const Icon(Icons.delete_outline, color: AppTheme.textMuted, size: 18),
+                      onPressed: () => _confirmDelete(context, controller, match.id),
                     ),
                   ],
-
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                    icon: const Icon(Icons.delete_outline, color: AppTheme.textMuted, size: 18),
-                    onPressed: () => _confirmDelete(context, controller, match.id),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -407,9 +678,67 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(Icons.history_toggle_off, size: 56, color: AppTheme.textMuted.withValues(alpha: 0.5)),
           const SizedBox(height: 10),
-          const Text('No matches found for filter', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
+          const Text('No matches found for filter/search', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textMuted)),
           const SizedBox(height: 4),
           const Text('Tap "Start New Match" to begin!', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRematch(BuildContext context, MatchController controller, MatchModel match) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.sync, color: AppTheme.primaryEmerald),
+            SizedBox(width: 8),
+            Text('START REMATCH?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${match.teamA} vs ${match.teamB}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.coinGold),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${match.teamAPlayers.length} players from each team will be reused.',
+              style: const TextStyle(fontSize: 13, color: Colors.white),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'All scoring statistics will start from 0.',
+              style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CANCEL', style: TextStyle(color: AppTheme.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              controller.startRematch(match);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CoinTossScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryEmerald,
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('START REMATCH', style: TextStyle(fontWeight: FontWeight.w900)),
+          ),
         ],
       ),
     );

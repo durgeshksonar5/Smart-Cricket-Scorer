@@ -63,6 +63,24 @@ class BowlerStats {
   double get economy => legalBalls > 0 ? (runsConceded / (legalBalls / 6.0)) : 0.0;
 }
 
+class ExtrasSummary {
+  final int wides;
+  final int noBalls;
+  final int byes;
+  final int legByes;
+  final int total;
+
+  ExtrasSummary({
+    this.wides = 0,
+    this.noBalls = 0,
+    this.byes = 0,
+    this.legByes = 0,
+    this.total = 0,
+  });
+
+  String get breakdown => 'WD: $wides, NB: $noBalls, B: $byes, LB: $legByes';
+}
+
 class MatchModel {
   final String id;
   String teamA;
@@ -368,6 +386,25 @@ class MatchModel {
       ));
     });
     return list;
+  }
+
+  ExtrasSummary getExtrasForInnings(int innings) {
+    List<OverModel> overs = innings == 1 ? inn1Overs : inn2Overs;
+    int wides = 0;
+    int noBalls = 0;
+    int byes = 0;
+    int legByes = 0;
+
+    for (var o in overs) {
+      for (var b in o.balls) {
+        if (b.extraType == 'WD') wides += (b.runs + 1);
+        if (b.extraType == 'NB') noBalls += 1;
+        if (b.extraType == 'B') byes += b.runs;
+        if (b.extraType == 'LB') legByes += b.runs;
+      }
+    }
+    int total = wides + noBalls + byes + legByes;
+    return ExtrasSummary(wides: wides, noBalls: noBalls, byes: byes, legByes: legByes, total: total);
   }
 
   Map<String, dynamic> toJson() {

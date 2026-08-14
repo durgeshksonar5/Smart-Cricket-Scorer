@@ -2,12 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/match_controller.dart';
 import '../models/player_model.dart';
+import '../models/team_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_footer.dart';
 import 'coin_toss_screen.dart';
+import 'my_teams_screen.dart';
+import 'reuse_teams_screen.dart';
+import 'team_editor_screen.dart';
 
 class TeamSetupScreen extends StatefulWidget {
-  const TeamSetupScreen({super.key});
+  final TeamModel? preselectedTeamA;
+  final TeamModel? preselectedTeamB;
+
+  const TeamSetupScreen({
+    super.key,
+    this.preselectedTeamA,
+    this.preselectedTeamB,
+  });
 
   @override
   State<TeamSetupScreen> createState() => _TeamSetupScreenState();
@@ -16,8 +27,8 @@ class TeamSetupScreen extends StatefulWidget {
 class _TeamSetupScreenState extends State<TeamSetupScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _battingTeamCtrl = TextEditingController(text: 'India');
-  final TextEditingController _bowlingTeamCtrl = TextEditingController(text: 'Australia');
+  late TextEditingController _battingTeamCtrl;
+  late TextEditingController _bowlingTeamCtrl;
   final TextEditingController _oversCtrl = TextEditingController(text: '20');
   final TextEditingController _playersCtrl = TextEditingController(text: '11');
 
@@ -28,10 +39,86 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
   List<TextEditingController> _teamAPlayerCtrls = [];
   List<TextEditingController> _teamBPlayerCtrls = [];
 
+  TeamModel? _selectedSavedTeamA;
+  TeamModel? _selectedSavedTeamB;
+
   @override
   void initState() {
     super.initState();
-    _initSquadControllers(11);
+    _battingTeamCtrl = TextEditingController(text: widget.preselectedTeamA?.name ?? 'India');
+    _bowlingTeamCtrl = TextEditingController(text: widget.preselectedTeamB?.name ?? 'Australia');
+
+    _selectedSavedTeamA = widget.preselectedTeamA;
+    _selectedSavedTeamB = widget.preselectedTeamB;
+
+    int initialPlayers = widget.preselectedTeamA?.players.length ?? 11;
+    _playersCtrl.text = initialPlayers.toString();
+
+    _initSquadControllers(initialPlayers);
+
+    // Apply preselected team players if provided
+    if (widget.preselectedTeamA != null) {
+      for (int i = 0; i < widget.preselectedTeamA!.players.length && i < _teamAPlayerCtrls.length; i++) {
+        _teamAPlayerCtrls[i].text = widget.preselectedTeamA!.players[i].name;
+      }
+    }
+    if (widget.preselectedTeamB != null) {
+      for (int i = 0; i < widget.preselectedTeamB!.players.length && i < _teamBPlayerCtrls.length; i++) {
+        _teamBPlayerCtrls[i].text = widget.preselectedTeamB!.players[i].name;
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _matchSavedTeamsOnLaunch();
+    });
+  }
+
+  void _matchSavedTeamsOnLaunch() {
+    final controller = Provider.of<MatchController>(context, listen: false);
+    final teams = controller.savedTeams;
+    if (teams.isEmpty) return;
+
+    if (_selectedSavedTeamA == null) {
+      int idxA = teams.indexWhere((t) => t.name.toLowerCase() == _battingTeamCtrl.text.toLowerCase());
+      if (idxA >= 0) {
+        _applyTeamA(teams[idxA]);
+      }
+    }
+    if (_selectedSavedTeamB == null) {
+      int idxB = teams.indexWhere((t) => t.name.toLowerCase() == _bowlingTeamCtrl.text.toLowerCase());
+      if (idxB >= 0) {
+        _applyTeamB(teams[idxB]);
+      }
+    }
+  }
+
+  void _applyTeamA(TeamModel team) {
+    setState(() {
+      _selectedSavedTeamA = team;
+      _battingTeamCtrl.text = team.name;
+      _initSquadControllers(team.players.length);
+      _playersCtrl.text = team.players.length.toString();
+      for (int i = 0; i < team.players.length; i++) {
+        _teamAPlayerCtrls[i].text = team.players[i].name;
+      }
+    });
+  }
+
+  void _applyTeamB(TeamModel team) {
+    setState(() {
+      _selectedSavedTeamB = team;
+      _bowlingTeamCtrl.text = team.name;
+      if (_teamBPlayerCtrls.length != team.players.length) {
+        for (var c in _teamBPlayerCtrls) {
+          c.dispose();
+        }
+        _teamBPlayerCtrls = List.generate(team.players.length, (i) => TextEditingController(text: team.players[i].name));
+      } else {
+        for (int i = 0; i < team.players.length; i++) {
+          _teamBPlayerCtrls[i].text = team.players[i].name;
+        }
+      }
+    });
   }
 
   void _initSquadControllers(int count) {
@@ -69,16 +156,20 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
     List<PlayerModel> teamAPlayers = List.generate(
       _teamAPlayerCtrls.length,
       (i) => PlayerModel(
-        id: 'a_${i + 1}',
+        id: 'a_${i + 1}_${DateTime.now().millisecondsSinceEpoch % 10000}',
         name: _teamAPlayerCtrls[i].text.trim().isEmpty ? '${_battingTeamCtrl.text.trim()} Player ${i + 1}' : _teamAPlayerCtrls[i].text.trim(),
+        isCaptain: _selectedSavedTeamA != null && i < _selectedSavedTeamA!.players.length ? _selectedSavedTeamA!.players[i].isCaptain : (i == 0),
+        isWicketKeeper: _selectedSavedTeamA != null && i < _selectedSavedTeamA!.players.length ? _selectedSavedTeamA!.players[i].isWicketKeeper : (i == 4),
       ),
     );
 
     List<PlayerModel> teamBPlayers = List.generate(
       _teamBPlayerCtrls.length,
       (i) => PlayerModel(
-        id: 'b_${i + 1}',
+        id: 'b_${i + 1}_${DateTime.now().millisecondsSinceEpoch % 10000}',
         name: _teamBPlayerCtrls[i].text.trim().isEmpty ? '${_bowlingTeamCtrl.text.trim()} Player ${i + 1}' : _teamBPlayerCtrls[i].text.trim(),
+        isCaptain: _selectedSavedTeamB != null && i < _selectedSavedTeamB!.players.length ? _selectedSavedTeamB!.players[i].isCaptain : (i == 0),
+        isWicketKeeper: _selectedSavedTeamB != null && i < _selectedSavedTeamB!.players.length ? _selectedSavedTeamB!.players[i].isWicketKeeper : (i == 4),
       ),
     );
 
@@ -109,9 +200,25 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Provider.of<MatchController>(context);
+    final savedTeams = controller.savedTeams;
+    final lastUsed = controller.lastUsedTeams;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Match Setup'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.people_outline, color: AppTheme.primaryEmerald),
+            tooltip: 'My Teams',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MyTeamsScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -124,8 +231,95 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionHeader('TEAM NAMES SETUP', Icons.shield),
-                      const SizedBox(height: 12),
+                      // QUICK REUSE BANNER (If previous teams available)
+                      if (lastUsed != null) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF163228), Color(0xFF1F4235)],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppTheme.primaryEmerald.withValues(alpha: 0.6)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.sync, color: AppTheme.coinGold, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Reuse Last Match: ${lastUsed["teamA"]} vs ${lastUsed["teamB"]}',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  List<PlayerModel> pA = (lastUsed['teamAPlayers'] as List<dynamic>?)?.map((p) => PlayerModel.fromJson(p)).toList() ?? [];
+                                  List<PlayerModel> pB = (lastUsed['teamBPlayers'] as List<dynamic>?)?.map((p) => PlayerModel.fromJson(p)).toList() ?? [];
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ReuseTeamsScreen(
+                                        teamAName: lastUsed['teamA'],
+                                        teamBName: lastUsed['teamB'],
+                                        teamAPlayers: pA,
+                                        teamBPlayers: pB,
+                                        totalOvers: lastUsed['totalOvers'] ?? 20,
+                                        playersPerTeam: lastUsed['playersPerTeam'] ?? 11,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  'REUSE',
+                                  style: TextStyle(color: AppTheme.coinGold, fontWeight: FontWeight.w900, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // TEAM A SELECTION
+                      _buildSectionHeader('TEAM A (BATTING)', Icons.shield),
+                      const SizedBox(height: 8),
+
+                      if (savedTeams.isNotEmpty) ...[
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              ...savedTeams.map((team) {
+                                bool isSel = _battingTeamCtrl.text.trim().toLowerCase() == team.name.trim().toLowerCase();
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: FilterChip(
+                                    label: Text(team.name),
+                                    selected: isSel,
+                                    selectedColor: AppTheme.primaryEmerald,
+                                    backgroundColor: AppTheme.cardBgLight,
+                                    labelStyle: TextStyle(
+                                      color: isSel ? Colors.black : Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                    onSelected: (_) => _applyTeamA(team),
+                                  ),
+                                );
+                              }),
+                              IconButton(
+                                icon: const Icon(Icons.add_circle_outline, color: AppTheme.coinGold, size: 20),
+                                tooltip: 'Create Team',
+                                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamEditorScreen())),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
 
                       TextFormField(
                         controller: _battingTeamCtrl,
@@ -144,7 +338,40 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                           });
                         },
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 18),
+
+                      // TEAM B SELECTION
+                      _buildSectionHeader('TEAM B (BOWLING)', Icons.shield_outlined),
+                      const SizedBox(height: 8),
+
+                      if (savedTeams.isNotEmpty) ...[
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              ...savedTeams.map((team) {
+                                bool isSel = _bowlingTeamCtrl.text.trim().toLowerCase() == team.name.trim().toLowerCase();
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: FilterChip(
+                                    label: Text(team.name),
+                                    selected: isSel,
+                                    selectedColor: AppTheme.coinGold,
+                                    backgroundColor: AppTheme.cardBgLight,
+                                    labelStyle: TextStyle(
+                                      color: isSel ? Colors.black : Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                    onSelected: (_) => _applyTeamB(team),
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
 
                       TextFormField(
                         controller: _bowlingTeamCtrl,
@@ -171,6 +398,7 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                       ),
                       const SizedBox(height: 24),
 
+                      // MATCH CONFIGURATION
                       _buildSectionHeader('MATCH CONFIGURATION', Icons.tune),
                       const SizedBox(height: 14),
 
@@ -376,6 +604,7 @@ class _TeamSetupScreenState extends State<TeamSetupScreen> {
                       ),
                       const SizedBox(height: 24),
 
+                      // SQUAD PLAYERS MANAGEMENT
                       _buildSectionHeader('SQUAD PLAYERS MANAGEMENT', Icons.group),
                       const SizedBox(height: 12),
 
