@@ -1,6 +1,6 @@
-# 🏏 Cricket Score App - APK Download Landing Page
+# 🏏 Smart Cricket Scorer – Official APK Download Landing Page
 
-This folder contains the official landing page for promoting and distributing the Android APK for **Cricket Score Counter**.
+This folder contains the official landing page for promoting and distributing the Android APK for **Smart Cricket Scorer** (Version 1.2.0).
 
 It is completely independent of the main Flutter application codebase in `lib/`, `android/`, `ios/`, etc.
 
@@ -10,19 +10,31 @@ It is completely independent of the main Flutter application codebase in `lib/`,
 
 ```text
 landing-page/
-├── index.html                  # Main responsive HTML5 landing page
+├── index.html                  # Main responsive HTML5 landing page (v1.2.0)
 ├── css/
 │   └── style.css               # Theme matching Flutter AppTheme (#0A1612, #00E676, #FFD700)
 ├── js/
-│   └── script.js               # Download tracking toast, 3D coin flip, mobile nav toggle
+│   └── script.js               # Download toast, interactive mockup tabs, 3D coin flip
 ├── assets/
 │   ├── logo/                   # App icons and brand logos
 │   ├── screenshots/            # App screenshots and UI previews
 │   └── images/                 # Supporting visual assets
 ├── apk/
-│   └── app-release.apk         # Compiled release APK binary (~49.6 MB)
+│   └── app-release.apk         # Compiled release APK binary (51.3 MB)
 └── README.md                   # Setup, maintenance, and deployment guide
 ```
+
+---
+
+## ✨ Features Highlighted in v1.2.0
+
+- 📜 **Permanent Match History**: Persistent local match database with zero data loss.
+- 🔍 **Search & Multi-Filters**: Filter by `ALL`, `LIVE`, `COMPLETED`, `EDITABLE`, `LOCKED`, or search by team, player, venue, date.
+- 🔄 **Quick Team Reuse & Rematch**: Reuse saved rosters with custom overs (1-50) and player counts (2-15) starting at 0/0 score.
+- 📊 **3-Tab Detailed Match Viewer**: Summary overview, complete Batting & Bowling tables with extras breakdown, and over-by-over ball timelines.
+- ⏱️ **2-Hour Edit Window Protection**: Live countdown timer for match score corrections before automatic permanent lock.
+- 🪙 **3D Coin Toss Simulation**: Interactive physics-based coin flip for pre-match toss decisions.
+- 💾 **Crash & Low-Battery Recovery**: Auto-saves every ball to resume matches anytime.
 
 ---
 
@@ -76,15 +88,7 @@ Whenever you build a new release APK in Flutter:
 
 ---
 
-## 🏷️ Customization & SEO
-
-- **SEO Tags**: Edit `<title>`, `<meta name="description">`, and `<meta name="keywords">` in `index.html`.
-- **App Name / Branding**: Change text inside `.nav-title` and `.hero-title`.
-- **Colors**: Modify CSS variables inside `css/style.css` (`--primary-emerald`, `--coin-gold`, `--bg-dark`).
-
----
-
 ## ✍️ Credits
 
 - **Developer**: Durgesh Sonar
-- **App Version**: 1.0.1+2
+- **App Version**: 1.2.0

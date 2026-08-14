@@ -1,5 +1,6 @@
 /**
- * CRICKET SCORE COUNTER - LANDING PAGE INTERACTIVE SCRIPT
+ * SMART CRICKET SCORER - LANDING PAGE INTERACTIVE SCRIPT
+ * Version: 1.2.0
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,8 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const toast = document.getElementById('downloadToast');
 
   downloadBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      // Allow relative APK download to trigger naturally, but show toast
+    btn.addEventListener('click', () => {
       showDownloadToast();
     });
   });
@@ -22,7 +22,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 4500);
   }
 
-  // 2. Interactive Coin Flip Section
+  // 2. Interactive Mockup Tab Switcher (Live Score, History, Team Reuse)
+  const mockupTabBtns = document.querySelectorAll('.preview-tab-btn');
+  const mockupViews = {
+    scorecard: document.getElementById('mockup-scorecard'),
+    history: document.getElementById('mockup-history'),
+    reuse: document.getElementById('mockup-reuse')
+  };
+
+  mockupTabBtns.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetView = tab.getAttribute('data-mockup');
+      
+      // Update active button
+      mockupTabBtns.forEach(btn => btn.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Toggle views
+      Object.keys(mockupViews).forEach(key => {
+        if (mockupViews[key]) {
+          mockupViews[key].style.display = (key === targetView) ? 'block' : 'none';
+        }
+      });
+    });
+  });
+
+  // 3. Interactive 3D Coin Flip Section
   const flipBtn = document.getElementById('flipCoinBtn');
   const coin = document.getElementById('interactiveCoin');
   const tossResultText = document.getElementById('tossResultText');
@@ -34,28 +59,29 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isFlipping) return;
       isFlipping = true;
 
-      tossResultText.textContent = "Flipping coin...";
+      tossResultText.textContent = "Flipping coin in the air...";
       tossResultText.style.color = "#FFD700";
 
       // Random outcome
       const isHeads = Math.random() < 0.5;
-      const rotationDegrees = isHeads ? 1800 : 1980; // 5 full turns vs 5.5 turns
+      const rotationDegrees = isHeads ? 1800 : 1980; // 5 turns vs 5.5 turns
 
       coin.style.transform = `rotateY(${rotationDegrees}deg)`;
 
       setTimeout(() => {
-        const winnerTeam = Math.random() < 0.5 ? "India" : "Australia";
-        const decision = Math.random() < 0.5 ? "BAT" : "BOWL";
+        const teams = ["India", "Australia", "England", "South Africa"];
+        const winnerTeam = teams[Math.floor(Math.random() * teams.length)];
+        const decision = Math.random() < 0.5 ? "BAT FIRST" : "BOWL FIRST";
         const side = isHeads ? "HEADS" : "TAILS";
 
-        tossResultText.innerHTML = `🪙 Result: <strong>${side}</strong>! <br> ${winnerTeam} won the toss & elected to <strong>${decision}</strong>.`;
+        tossResultText.innerHTML = `🪙 Coin Result: <strong>${side}</strong>! <br> 🏆 <strong>${winnerTeam}</strong> won the toss and elected to <strong>${decision}</strong>.`;
         tossResultText.style.color = "#00E676";
         isFlipping = false;
       }, 1500);
     });
   }
 
-  // 3. Mobile Navigation Toggle
+  // 4. Mobile Navigation Toggle
   const navToggle = document.getElementById('mobileNavToggle');
   const navLinks = document.querySelector('.nav-links');
 
@@ -77,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 4. Smooth scrolling for internal anchor links
+  // 5. Smooth scrolling for internal navigation
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
       e.preventDefault();
