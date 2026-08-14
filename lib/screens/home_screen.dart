@@ -727,17 +727,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              controller.startRematch(match);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const CoinTossScreen()),
+                MaterialPageRoute(builder: (context) => ReuseTeamsScreen(sourceMatch: match)),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryEmerald,
               foregroundColor: Colors.black,
             ),
-            child: const Text('START REMATCH', style: TextStyle(fontWeight: FontWeight.w900)),
+            child: const Text('CONFIGURE & REMATCH', style: TextStyle(fontWeight: FontWeight.w900)),
           ),
         ],
       ),

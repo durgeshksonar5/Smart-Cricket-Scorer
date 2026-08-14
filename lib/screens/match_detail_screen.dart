@@ -9,7 +9,7 @@ import '../models/over_model.dart';
 import '../models/ball_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_footer.dart';
-import 'coin_toss_screen.dart';
+import 'reuse_teams_screen.dart';
 
 class MatchDetailScreen extends StatefulWidget {
   final MatchModel match;
@@ -251,7 +251,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
           _buildSectionHeader('INNINGS BREAKDOWN', Icons.analytics_outlined),
           const SizedBox(height: 8),
           _buildInningsOverviewCard(
-            title: '1st Innings: ${match.tossDetails?.tossDecision == "Bowl First" ? match.teamB : match.teamA}',
+            title: '1st Innings: ${match.inn1BattingTeam}',
             runs: match.inn1Runs,
             wickets: match.inn1Wickets,
             balls: match.inn1Balls,
@@ -259,7 +259,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
           ),
           const SizedBox(height: 10),
           _buildInningsOverviewCard(
-            title: '2nd Innings: ${match.tossDetails?.tossDecision == "Bowl First" ? match.teamA : match.teamB}',
+            title: '2nd Innings: ${match.inn2BattingTeam}',
             runs: match.inn2Runs,
             wickets: match.inn2Wickets,
             balls: match.inn2Balls,
@@ -343,11 +343,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
     int balls = innings == 1 ? match.inn1Balls : match.inn2Balls;
     String oversFormatted = MatchModel.formatOvers(balls);
 
-    String battingTeamName = (innings == 1)
-        ? (match.tossDetails?.tossDecision == "Bowl First" ? match.teamB : match.teamA)
-        : (match.tossDetails?.tossDecision == "Bowl First" ? match.teamA : match.teamB);
-
-    String bowlingTeamName = (battingTeamName == match.teamA) ? match.teamB : match.teamA;
+    String battingTeamName = innings == 1 ? match.inn1BattingTeam : match.inn2BattingTeam;
+    String bowlingTeamName = innings == 1 ? match.inn1BowlingTeam : match.inn2BowlingTeam;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -877,11 +874,13 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> with SingleTicker
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              controller.startRematch(match);
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const CoinTossScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ReuseTeamsScreen(sourceMatch: match)),
+              );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryEmerald, foregroundColor: Colors.black),
-            child: const Text('START REMATCH', style: TextStyle(fontWeight: FontWeight.w900)),
+            child: const Text('CONFIGURE & REMATCH', style: TextStyle(fontWeight: FontWeight.w900)),
           ),
         ],
       ),

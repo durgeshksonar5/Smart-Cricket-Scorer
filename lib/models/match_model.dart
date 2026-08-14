@@ -226,11 +226,36 @@ class MatchModel {
     return '$overs.$ballsInOver';
   }
 
+  String get inn1BattingTeam {
+    if (tossDetails != null) {
+      return tossDetails!.battingTeam;
+    }
+    return teamA;
+  }
+
+  String get inn1BowlingTeam {
+    if (tossDetails != null) {
+      return tossDetails!.bowlingTeam;
+    }
+    return teamB;
+  }
+
+  String get inn2BattingTeam => inn1BowlingTeam;
+  String get inn2BowlingTeam => inn1BattingTeam;
+
+  List<PlayerModel> getInnBattingSquad(int innings) {
+    String batTeam = innings == 1 ? inn1BattingTeam : inn2BattingTeam;
+    return batTeam.trim().toLowerCase() == teamA.trim().toLowerCase() ? teamAPlayers : teamBPlayers;
+  }
+
+  List<PlayerModel> getInnBowlingSquad(int innings) {
+    String bowlTeam = innings == 1 ? inn1BowlingTeam : inn2BowlingTeam;
+    return bowlTeam.trim().toLowerCase() == teamA.trim().toLowerCase() ? teamAPlayers : teamBPlayers;
+  }
+
   List<BatterStats> getBattingStatsForInnings(int innings) {
     List<OverModel> overs = innings == 1 ? inn1Overs : inn2Overs;
-    List<PlayerModel> squad = (innings == 1)
-        ? (battingTeam == teamA ? teamAPlayers : teamBPlayers)
-        : (battingTeam == teamA ? teamBPlayers : teamAPlayers);
+    List<PlayerModel> squad = getInnBattingSquad(innings);
 
     List<BallModel> allBalls = [];
     for (var o in overs) {
@@ -253,12 +278,8 @@ class MatchModel {
     for (var b in allBalls) {
       battedPlayersSet.add(b.strikerId);
       battedPlayersSet.add(b.nonStrikerId);
-      if (playerNamesMap.containsKey(b.strikerId)) {
-        playerNamesMap[b.strikerId] = b.striker;
-      }
-      if (playerNamesMap.containsKey(b.nonStrikerId)) {
-        playerNamesMap[b.nonStrikerId] = b.nonStriker;
-      }
+      playerNamesMap[b.strikerId] = b.striker;
+      playerNamesMap[b.nonStrikerId] = b.nonStriker;
 
       if (b.extraType != 'WD') {
         ballsMap[b.strikerId] = (ballsMap[b.strikerId] ?? 0) + 1;
@@ -296,8 +317,13 @@ class MatchModel {
     }
 
     List<BatterStats> list = [];
+    Set<String> processedPlayerIds = {};
+
+    // 1. Add all players from the batting squad who batted or are at crease
     for (var p in squad) {
-      if (battedPlayersSet.contains(p.id) || p.id == currentStrikerId || p.id == currentNonStrikerId) {
+      bool isCurrentBatter = (currentInnings == innings && (p.id == currentStrikerId || p.id == currentNonStrikerId));
+      if (battedPlayersSet.contains(p.id) || isCurrentBatter) {
+        processedPlayerIds.add(p.id);
         int r = runsMap[p.id] ?? 0;
         int b = ballsMap[p.id] ?? 0;
         int f = foursMap[p.id] ?? 0;
@@ -307,7 +333,7 @@ class MatchModel {
         double sr = b > 0 ? (r / b) * 100 : 0.0;
         list.add(BatterStats(
           playerId: p.id,
-          playerName: p.name,
+          playerName: playerNamesMap[p.id] ?? p.name,
           runs: r,
           balls: b,
           fours: f,
@@ -318,6 +344,32 @@ class MatchModel {
         ));
       }
     }
+
+    // 2. Safety fallback: Include any other batter IDs recorded in ball-by-ball
+    for (var pId in battedPlayersSet) {
+      if (!processedPlayerIds.contains(pId)) {
+        processedPlayerIds.add(pId);
+        int r = runsMap[pId] ?? 0;
+        int b = ballsMap[pId] ?? 0;
+        int f = foursMap[pId] ?? 0;
+        int s = sixesMap[pId] ?? 0;
+        bool out = isOutMap[pId] ?? false;
+        String d = out ? (dismissalMap[pId] ?? 'out') : 'not out';
+        double sr = b > 0 ? (r / b) * 100 : 0.0;
+        list.add(BatterStats(
+          playerId: pId,
+          playerName: playerNamesMap[pId] ?? 'Batter',
+          runs: r,
+          balls: b,
+          fours: f,
+          sixes: s,
+          isOut: out,
+          dismissalInfo: d,
+          strikeRate: sr,
+        ));
+      }
+    }
+
     return list;
   }
 

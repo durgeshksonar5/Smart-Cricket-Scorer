@@ -309,7 +309,7 @@ class MatchSummaryScreen extends StatelessWidget {
                     _buildSectionTitle('INNINGS BREAKDOWN'),
                     const SizedBox(height: 10),
                     _buildInningsCard(
-                      inningsLabel: '1st Innings: ${match.tossDetails?.tossDecision == "Bowl First" ? match.teamB : match.teamA}',
+                      inningsLabel: '1st Innings: ${match.inn1BattingTeam}',
                       runs: match.inn1Runs,
                       wickets: match.inn1Wickets,
                       balls: match.inn1Balls,
@@ -317,7 +317,7 @@ class MatchSummaryScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     _buildInningsCard(
-                      inningsLabel: '2nd Innings: ${match.tossDetails?.tossDecision == "Bowl First" ? match.teamA : match.teamB}',
+                      inningsLabel: '2nd Innings: ${match.inn2BattingTeam}',
                       runs: match.inn2Runs,
                       wickets: match.inn2Wickets,
                       balls: match.inn2Balls,

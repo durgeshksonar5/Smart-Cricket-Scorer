@@ -130,5 +130,58 @@ void main() {
       // Verify past match snapshot remains intact
       expect(matchSnapshot.teamAPlayers.first.name, equals('Rohit Sharma'));
     });
+
+    test('Reusing previous teams with modified overs (10) and players (8) leaves previous match 20-over 11-player record completely intact', () {
+      final controller = MatchController();
+
+      // Setup Match 1 (20 overs, 11 players)
+      controller.setupMatch(
+        teamA: 'India',
+        teamB: 'Australia',
+        dateTime: DateTime.now(),
+        totalOvers: 20,
+        playersPerTeam: 11,
+      );
+      controller.finalizeTossDecision(
+        callingTeam: 'India',
+        tossCall: 'HEADS',
+        coinResult: 'HEADS',
+        tossDecision: 'Bat First',
+      );
+      controller.recordBall(runs: 6);
+      MatchModel match1 = controller.currentMatch!;
+      expect(match1.totalOvers, equals(20));
+      expect(match1.playersPerTeam, equals(11));
+      expect(match1.inn1Runs, equals(6));
+
+      // Setup Match 2 by reusing India & Australia with 10 overs and 8 players
+      List<PlayerModel> selected8A = match1.teamAPlayers.take(8).toList();
+      List<PlayerModel> selected8B = match1.teamBPlayers.take(8).toList();
+
+      controller.setupMatch(
+        teamA: match1.teamA,
+        teamB: match1.teamB,
+        dateTime: DateTime.now(),
+        totalOvers: 10,
+        playersPerTeam: 8,
+        teamAPlayers: selected8A,
+        teamBPlayers: selected8B,
+      );
+
+      MatchModel match2 = controller.currentMatch!;
+
+      // Match 2 must have new config and 0 score
+      expect(match2.totalOvers, equals(10));
+      expect(match2.playersPerTeam, equals(8));
+      expect(match2.teamAPlayers.length, equals(8));
+      expect(match2.teamBPlayers.length, equals(8));
+      expect(match2.inn1Runs, equals(0));
+      expect(match2.inn1Balls, equals(0));
+
+      // Match 1 remains completely unchanged
+      expect(match1.totalOvers, equals(20));
+      expect(match1.playersPerTeam, equals(11));
+      expect(match1.inn1Runs, equals(6));
+    });
   });
 }

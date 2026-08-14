@@ -182,5 +182,54 @@ void main() {
       controller.currentMatch!.editExpiresAt = DateTime.now().subtract(const Duration(minutes: 1));
       expect(controller.currentMatch!.isEditable, isFalse);
     });
+
+    test('2nd innings batting stats accurately display second innings batsman data', () {
+      controller.setupMatch(
+        teamA: 'India',
+        teamB: 'Australia',
+        dateTime: DateTime.now(),
+        totalOvers: 20,
+        playersPerTeam: 11,
+      );
+      controller.finalizeTossDecision(
+        callingTeam: 'India',
+        tossCall: 'HEADS',
+        coinResult: 'HEADS',
+        tossDecision: 'Bat First',
+      );
+
+      // Innings 1: India bats, scores 10 runs
+      controller.recordBall(runs: 4);
+      controller.recordBall(runs: 6);
+
+      // Transition to 2nd innings
+      controller.startSecondInnings();
+      expect(controller.currentMatch!.currentInnings, equals(2));
+
+      // Australia opening batters
+      final ausSquad = controller.currentMatch!.teamBPlayers;
+      final indSquad = controller.currentMatch!.teamAPlayers;
+      controller.setOpeningPlayers(
+        striker: ausSquad[0], // David Warner
+        nonStriker: ausSquad[1], // Steve Smith
+        bowler: indSquad[0], // Jasprit Bumrah
+      );
+
+      // Australia bats: Warner hits 4 and 6 (10 runs)
+      controller.recordBall(runs: 4);
+      controller.recordBall(runs: 6);
+
+      // Verify 2nd innings batting stats
+      final inn2Batters = controller.currentMatch!.getBattingStatsForInnings(2);
+      expect(inn2Batters, isNotEmpty);
+      expect(inn2Batters.any((b) => b.playerName == ausSquad[0].name), isTrue);
+
+      final warner = inn2Batters.firstWhere((b) => b.playerName == ausSquad[0].name);
+      expect(warner.runs, equals(10));
+      expect(warner.balls, equals(2));
+      expect(warner.fours, equals(1));
+      expect(warner.sixes, equals(1));
+      expect(warner.strikeRate, equals(500.0));
+    });
   });
 }
