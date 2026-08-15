@@ -25,7 +25,7 @@ class MatchConfirmationScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Match Ready'),
+        title: const Text('Match Ready'),   
       ),
       body: SafeArea(
         child: Column(
